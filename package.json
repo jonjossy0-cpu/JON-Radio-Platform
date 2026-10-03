@@ -1,0 +1,13 @@
+{
+  "name": "jon-radio-platform",
+  "version": "1.0.0",
+  "description": "JON Radio Platform – Multi-Radio Management and 24/7 Streaming Platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}
