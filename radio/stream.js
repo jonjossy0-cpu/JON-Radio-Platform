@@ -1,45 +1,45 @@
 const { spawn } = require("child_process");
+const { PassThrough } = require("stream");
 
 // =====================================
 // JON RADIO PLATFORM
 // JON FM ETHIOPIA
-// STREAM ENGINE
+// REAL AUDIO STREAM ENGINE
 // =====================================
+
+const clients = new Set();
 
 let ffmpegProcess = null;
 let streamRunning = false;
 
-// -------------------------------------
-// Start Stream
-// -------------------------------------
+// =====================================
+// START AUDIO ENGINE
+// =====================================
 
 function startStream(input) {
-
   if (streamRunning) {
     console.log("JON STREAM: Already running.");
-    return;
+    return false;
   }
 
   if (!input) {
     console.log("JON STREAM: No input provided.");
-    return;
+    return false;
   }
 
   console.log("--------------------------------");
-  console.log("JON FM ETHIOPIA STREAM STARTING");
+  console.log("JON FM ETHIOPIA");
+  console.log("AUDIO STREAM STARTING");
   console.log("--------------------------------");
 
   ffmpegProcess = spawn("ffmpeg", [
     "-re",
-
     "-i",
     input,
 
     "-vn",
-
     "-ac",
     "2",
-
     "-ar",
     "44100",
 
@@ -54,50 +54,86 @@ function startStream(input) {
 
   streamRunning = true;
 
-  ffmpegProcess.stderr.on("data", data => {
-    // FFmpeg diagnostic output
-    // intentionally not printed continuously
+  // =====================================
+  // SEND AUDIO TO ALL LISTENERS
+  // =====================================
+
+  ffmpegProcess.stdout.on("data", chunk => {
+    for (const client of clients) {
+      try {
+        client.write(chunk);
+      } catch (error) {
+        clients.delete(client);
+      }
+    }
   });
 
-  ffmpegProcess.on("error", error => {
+  // =====================================
+  // FFmpeg ERROR
+  // =====================================
 
+  ffmpegProcess.on("error", error => {
     console.error(
-      "JON STREAM ERROR:",
+      "JON STREAM FFmpeg ERROR:",
       error.message
     );
 
     streamRunning = false;
     ffmpegProcess = null;
-
   });
 
-  ffmpegProcess.on("close", code => {
+  // =====================================
+  // FFmpeg STOP
+  // =====================================
 
+  ffmpegProcess.on("close", code => {
     console.log(
-      "JON STREAM STOPPED. FFmpeg code:",
+      "JON STREAM FFmpeg STOPPED:",
       code
     );
 
     streamRunning = false;
     ffmpegProcess = null;
-
   });
 
-  return ffmpegProcess.stdout;
+  return true;
 }
 
-// -------------------------------------
-// Stop Stream
-// -------------------------------------
+// =====================================
+// ADD LISTENER
+// =====================================
+
+function addClient(res) {
+  clients.add(res);
+
+  console.log(
+    "JON FM LISTENER CONNECTED:",
+    clients.size
+  );
+
+  res.on("close", () => {
+    clients.delete(res);
+
+    console.log(
+      "JON FM LISTENER DISCONNECTED:",
+      clients.size
+    );
+  });
+}
+
+// =====================================
+// STOP STREAM
+// =====================================
 
 function stopStream() {
-
   if (!ffmpegProcess) {
     streamRunning = false;
     return;
   }
 
-  console.log("JON STREAM: Stopping...");
+  console.log(
+    "JON STREAM: Stopping..."
+  );
 
   ffmpegProcess.kill("SIGTERM");
 
@@ -105,24 +141,24 @@ function stopStream() {
   streamRunning = false;
 }
 
-// -------------------------------------
-// Stream Status
-// -------------------------------------
+// =====================================
+// STATUS
+// =====================================
 
 function getStatus() {
-
   return {
-    running: streamRunning
+    running: streamRunning,
+    listeners: clients.size
   };
-
 }
 
-// -------------------------------------
-// Export
-// -------------------------------------
+// =====================================
+// EXPORT
+// =====================================
 
 module.exports = {
   startStream,
   stopStream,
+  addClient,
   getStatus
 };
