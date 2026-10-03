@@ -5,6 +5,9 @@ const fs = require("fs");
 
 const autoDJ = require("./radio/autodj");
 const stream = require("./radio/stream");
+const live = require("./radio/live");
+const http = require("http");
+const { WebSocketServer } = require("ws");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -81,6 +84,31 @@ const station = {
 };
 
 let listeners = 0;
+
+const server = http.createServer(app);
+const liveWSS = new WebSocketServer({ noServer: true });
+
+server.on("upgrade", (req, socket, head) => {
+  if (req.url !== "/live-mic") {
+    socket.destroy();
+    return;
+  }
+
+  liveWSS.handleUpgrade(req, socket, head, ws => {
+    liveWSS.emit("connection", ws, req);
+  });
+});
+
+liveWSS.on("connection", ws => {
+  if (!live.start()) {
+    ws.close(1013, "Another broadcast source is active.");
+    return;
+  }
+
+  ws.on("message", data => live.writeAudio(data));
+  ws.on("close", () => live.stop());
+  ws.on("error", () => live.stop());
+});
 
 // =====================================
 // HOME
