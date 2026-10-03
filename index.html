@@ -1286,44 +1286,108 @@ document
 .getElementById("musicUpload")
 .addEventListener(
   "change",
-  function(){
+  async function(){
 
     const files =
       Array.from(this.files || []);
 
+    if(!files.length) return;
+
+    const formData = new FormData();
 
     files.forEach(file=>{
+      const type = (file.type || "").toLowerCase();
+      const name = file.name.toLowerCase();
 
-      musicLibrary.push({
-
-        id:
-          Date.now() +
-          "-" +
-          Math.random()
-            .toString(36)
-            .slice(2),
-
-        name:file.name,
-
-        type:file.type || "audio",
-
-        size:file.size
-
-      });
-
+      if(
+        type === "audio/mpeg" ||
+        type === "audio/wav" ||
+        type === "audio/x-wav" ||
+        type === "audio/wave" ||
+        name.endsWith(".mp3") ||
+        name.endsWith(".wav")
+      ){
+        formData.append("music", file);
+      }
     });
 
+    try{
 
-    saveMusic();
+      const response = await fetch(
+        BACKEND_URL + "/api/music/upload",
+        {
+          method:"POST",
+          body:formData
+        }
+      );
 
-    renderMusic();
+      const result = await response.json();
 
-    updateStats();
+      if(!response.ok){
+        throw new Error(result.error || "Upload failed.");
+      }
+
+      await loadServerMusic();
+
+      alert(
+        result.message ||
+        "Music uploaded successfully."
+      );
+
+    }catch(error){
+
+      alert(
+        "Music upload failed. Check the JON Radio backend connection."
+      );
+
+    }
 
     this.value = "";
 
   }
 );
+
+
+/* =====================================================
+   LOAD SERVER MUSIC
+===================================================== */
+
+async function loadServerMusic(){
+
+  try{
+
+    const response = await fetch(
+      BACKEND_URL + "/api/music",
+      {cache:"no-store"}
+    );
+
+    if(!response.ok) return;
+
+    const serverMusic = await response.json();
+
+    musicLibrary = serverMusic.map(music=>({
+      id:"server-" + music.name,
+      name:music.name,
+      type:"audio",
+      size:music.size,
+      url:music.url,
+      server:true
+    }));
+
+    saveMusic();
+    renderMusic();
+    updateStats();
+
+  }catch(error){
+
+    console.log(
+      "JON MUSIC SERVER:",
+      error.message
+    );
+
+  }
+
+}
 
 
 /* =====================================================
