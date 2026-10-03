@@ -884,6 +884,10 @@ let autoDJ = false;
 let liveMode = false;
 
 let microphoneStream = null;
+let microphoneRecorder = null;
+let liveSocket = null;
+const BACKEND_URL = window.JON_RADIO_BACKEND || window.location.origin;
+function websocketUrl(path){ const base=BACKEND_URL.replace(/\/$/,""); const url=new URL(base+path); url.protocol=url.protocol==="https:"?"wss:":"ws:"; return url.toString(); }
 
 
 /* =====================================================
@@ -1596,66 +1600,63 @@ function stopAutoDJ(){
 ===================================================== */
 
 async function startLive(){
-
   if(liveMode) return;
-
-
-  try{
-
-    microphoneStream =
-      await navigator.mediaDevices
-        .getUserMedia({
-          audio:true
-        });
-
-
-    liveMode = true;
-
-    autoDJ = false;
-
-    updateBroadcastUI();
-
-    document
-      .getElementById("liveText")
-      .textContent =
-        "Microphone is ON";
-
-  }catch(error){
-
-    alert(
-      "Microphone permission was not granted."
-    );
-
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){
+    alert("This browser does not support Live microphone recording.");
+    return;
   }
-
+  try{
+    microphoneStream=await navigator.mediaDevices.getUserMedia({
+      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
+    });
+    liveSocket=new WebSocket(websocketUrl("/live-mic"));
+    liveSocket.binaryType="arraybuffer";
+    liveSocket.onopen=()=>{
+      try{
+        microphoneRecorder=new MediaRecorder(microphoneStream,{mimeType:"audio/webm;codecs=opus"});
+      }catch(error){
+        microphoneRecorder=new MediaRecorder(microphoneStream);
+      }
+      microphoneRecorder.ondataavailable=e=>{
+        if(e.data.size>0 && liveSocket && liveSocket.readyState===WebSocket.OPEN) liveSocket.send(e.data);
+      };
+      microphoneRecorder.onerror=()=>{ alert("Live microphone recording error."); stopLive(); };
+      microphoneRecorder.start(250);
+      liveMode=true;
+      autoDJ=false;
+      updateBroadcastUI();
+      document.getElementById("liveText").textContent="Microphone is ON — LIVE to JON FM";
+    };
+    liveSocket.onclose=()=>{
+      if(liveMode){
+        liveMode=false;
+        microphoneRecorder=null;
+        updateBroadcastUI();
+        document.getElementById("liveText").textContent="Live connection closed";
+      }
+    };
+    liveSocket.onerror=()=>{
+      alert("Could not connect to the JON Radio live server.");
+      stopLive();
+    };
+  }catch(error){
+    if(microphoneStream){ microphoneStream.getTracks().forEach(t=>t.stop()); microphoneStream=null; }
+    alert("Microphone permission was not granted.");
+  }
 }
-
 
 function stopLive(){
-
-  if(microphoneStream){
-
-    microphoneStream
-      .getTracks()
-      .forEach(track=>{
-        track.stop();
-      });
-
-    microphoneStream = null;
-
+  if(microphoneRecorder){
+    try{ if(microphoneRecorder.state!=="inactive") microphoneRecorder.stop(); }catch(error){}
+    microphoneRecorder=null;
   }
-
-
-  liveMode = false;
-
+  if(liveSocket){ try{ liveSocket.close(); }catch(error){} liveSocket=null; }
+  if(microphoneStream){ microphoneStream.getTracks().forEach(t=>t.stop()); microphoneStream=null; }
+  liveMode=false;
   updateBroadcastUI();
-
-  document
-    .getElementById("liveText")
-    .textContent =
-      "Microphone is OFF";
-
+  document.getElementById("liveText").textContent="Microphone is OFF";
 }
+
 
 
 /* =====================================================
