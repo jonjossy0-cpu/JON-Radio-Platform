@@ -330,13 +330,17 @@ app.post(
       autoDJ.startAutoDJ();
 
     if (!started) {
+      const musicFiles = autoDJ.getMusicFiles();
 
       return res.status(409).json({
         success: false,
-        error:
-          "Auto DJ could not start."
+        error: musicFiles.length
+          ? "Auto DJ could not start because the stream is busy or another broadcast source is active."
+          : "No MP3/WAV file is available on the server. Upload music again after the latest Render deploy.",
+        musicCount: musicFiles.length,
+        stream: stream.getStatus(),
+        autoDJ: autoDJ.getStatus()
       });
-
     }
 
     res.json({
