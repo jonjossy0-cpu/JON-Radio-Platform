@@ -886,7 +886,7 @@ let liveMode = false;
 let microphoneStream = null;
 let microphoneRecorder = null;
 let liveSocket = null;
-const BACKEND_URL = window.JON_RADIO_BACKEND || window.location.origin;
+const BACKEND_URL = window.JON_RADIO_BACKEND || "https://jon-radio-platform.onrender.com";
 function websocketUrl(path){ const base=BACKEND_URL.replace(/\/$/,""); const url=new URL(base+path); url.protocol=url.protocol==="https:"?"wss:":"ws:"; return url.toString(); }
 
 
