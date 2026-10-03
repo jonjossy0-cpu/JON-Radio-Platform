@@ -100,14 +100,26 @@ server.on("upgrade", (req, socket, head) => {
 });
 
 liveWSS.on("connection", ws => {
+  // Pause Auto DJ while a microphone session is active.
+  autoDJ.startLive();
+
   if (!live.start()) {
+    autoDJ.stopLive();
     ws.close(1013, "Another broadcast source is active.");
     return;
   }
 
   ws.on("message", data => live.writeAudio(data));
-  ws.on("close", () => live.stop());
-  ws.on("error", () => live.stop());
+
+  ws.on("close", () => {
+    live.stop();
+    autoDJ.stopLive();
+  });
+
+  ws.on("error", () => {
+    live.stop();
+    autoDJ.stopLive();
+  });
 });
 
 // =====================================
@@ -138,11 +150,12 @@ app.get("/api/status", (req, res) => {
     online:
       dj.autoDJ ||
       dj.live ||
+      live.isActive() ||
       streamStatus.running,
 
-    listeners,
+    listeners: streamStatus.listeners,
 
-    live: dj.live,
+    live: dj.live || live.isActive(),
 
     autoDJ: dj.autoDJ,
 
@@ -349,14 +362,17 @@ app.post(
   "/api/live/start",
   (req, res) => {
 
-    autoDJ.startLive();
+    const started = autoDJ.startLive();
 
     res.json({
-      success: true,
-      message:
-        "Live mode started. Auto DJ paused.",
-      status:
-        autoDJ.getStatus()
+      success: started,
+      message: started
+        ? "Live mode armed. Connect the microphone from the dashboard."
+        : "Live mode could not start because another broadcast source is active.",
+      status: {
+        ...autoDJ.getStatus(),
+        liveEngine: live.isActive()
+      }
     });
 
   }
@@ -370,14 +386,16 @@ app.post(
   "/api/live/stop",
   (req, res) => {
 
+    live.stop();
     autoDJ.stopLive();
 
     res.json({
       success: true,
-      message:
-        "Live mode stopped.",
-      status:
-        autoDJ.getStatus()
+      message: "Live mode stopped. Auto DJ can resume.",
+      status: {
+        ...autoDJ.getStatus(),
+        liveEngine: live.isActive()
+      }
     });
 
   }
@@ -533,7 +551,7 @@ app.use(
 // START SERVER
 // =====================================
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
 
   console.log("");
   console.log("================================");
