@@ -1,181 +1,107 @@
 const { spawn } = require("child_process");
-const { PassThrough } = require("stream");
-
-// =====================================
-// JON RADIO PLATFORM
-// JON FM ETHIOPIA
-// REAL AUDIO STREAM ENGINE
-// =====================================
 
 const clients = new Set();
 
 let ffmpegProcess = null;
 let streamRunning = false;
+let broadcastSource = null;
 
-// =====================================
-// START AUDIO ENGINE
-// =====================================
-
-function startStream(input) {
-  if (streamRunning) {
-    console.log("JON STREAM: Already running.");
-    return false;
-  }
-
-  if (!input) {
-    console.log("JON STREAM: No input provided.");
-    return false;
-  }
-
-  console.log("--------------------------------");
-  console.log("JON FM ETHIOPIA");
-  console.log("AUDIO STREAM STARTING");
-  console.log("--------------------------------");
-
-  ffmpegProcess = spawn("ffmpeg", [
-    "-re",
-    "-i",
-    input,
-
-    "-vn",
-    "-ac",
-    "2",
-    "-ar",
-    "44100",
-
-    "-b:a",
-    "128k",
-
-    "-f",
-    "mp3",
-
-    "pipe:1"
-  ]);
-
-  streamRunning = true;
-
-  // =====================================
-  // SEND AUDIO TO ALL LISTENERS
-  // =====================================
-
-  ffmpegProcess.stdout.on("data", chunk => {
-    for (const client of clients) {
-      try {
-        client.write(chunk);
-      } catch (error) {
-        clients.delete(client);
-      }
-    }
-  });
-
-  // =====================================
-  // FFmpeg ERROR
-  // =====================================
-
-  ffmpegProcess.on("error", error => {
-    console.error(
-      "JON STREAM FFmpeg ERROR:",
-      error.message
-    );
-
-    streamRunning = false;
-    ffmpegProcess = null;
-  });
-
-  // =====================================
-  // FFmpeg STOP
-  // =====================================
-
-  ffmpegProcess.on("close", code => {
-    console.log(
-      "JON STREAM FFmpeg STOPPED:",
-      code
-    );
-
-    streamRunning = false;
-    ffmpegProcess = null;
-  });
-
-  return true;
-}
-
-// =====================================
-// ADD LISTENER
-// =====================================
-
-function addClient(res) {
-  clients.add(res);
-
-  console.log(
-    "JON FM LISTENER CONNECTED:",
-    clients.size
-  );
-
-  res.on("close", () => {
-    clients.delete(res);
-
-    console.log(
-      "JON FM LISTENER DISCONNECTED:",
-      clients.size
-    );
-  });
-}
-
-
-// =====================================
-// BROADCAST AUDIO
-// =====================================
-
-function broadcastAudio(chunk) {
+function writeToListeners(chunk) {
   for (const client of clients) {
     try {
-      if (!client.writableEnded) {
-        client.write(chunk);
-      }
+      if (!client.writableEnded) client.write(chunk);
     } catch (error) {
       clients.delete(client);
     }
   }
 }
 
-// =====================================
-// STOP STREAM
-// =====================================
-
-function stopStream() {
-  if (!ffmpegProcess) {
-    streamRunning = false;
-    return;
+function startStream(input) {
+  if (streamRunning || broadcastSource) {
+    console.log("JON STREAM: Another broadcast source is already active.");
+    return false;
   }
+  if (!input) return false;
 
-  console.log(
-    "JON STREAM: Stopping..."
-  );
+  ffmpegProcess = spawn("ffmpeg", [
+    "-re","-i",input,"-vn","-ac","2","-ar","44100",
+    "-b:a","128k","-f","mp3","pipe:1"
+  ]);
 
-  ffmpegProcess.kill("SIGTERM");
+  streamRunning = true;
+  broadcastSource = "external";
 
-  ffmpegProcess = null;
-  streamRunning = false;
+  ffmpegProcess.stdout.on("data", writeToListeners);
+
+  ffmpegProcess.on("error", error => {
+    console.error("JON STREAM FFmpeg ERROR:", error.message);
+    ffmpegProcess = null;
+    streamRunning = false;
+    broadcastSource = null;
+  });
+
+  ffmpegProcess.on("close", code => {
+    console.log("JON STREAM FFmpeg STOPPED:", code);
+    ffmpegProcess = null;
+    streamRunning = false;
+    broadcastSource = null;
+  });
+
+  return true;
 }
 
-// =====================================
-// STATUS
-// =====================================
+function startAutoDJBroadcast() {
+  if (broadcastSource && broadcastSource !== "autodj") {
+    return false;
+  }
+  broadcastSource = "autodj";
+  streamRunning = true;
+  return true;
+}
+
+function stopAutoDJBroadcast() {
+  if (broadcastSource === "autodj") {
+    broadcastSource = null;
+    streamRunning = false;
+  }
+}
+
+function addClient(res) {
+  clients.add(res);
+  console.log("JON FM LISTENER CONNECTED:", clients.size);
+  res.on("close", () => {
+    clients.delete(res);
+    console.log("JON FM LISTENER DISCONNECTED:", clients.size);
+  });
+}
+
+function broadcastAudio(chunk) {
+  if (broadcastSource !== "autodj") return;
+  writeToListeners(chunk);
+}
+
+function stopStream() {
+  if (ffmpegProcess) {
+    ffmpegProcess.kill("SIGTERM");
+    ffmpegProcess = null;
+  }
+  streamRunning = false;
+  broadcastSource = null;
+}
 
 function getStatus() {
   return {
     running: streamRunning,
-    listeners: clients.size
+    listeners: clients.size,
+    source: broadcastSource
   };
 }
-
-// =====================================
-// EXPORT
-// =====================================
 
 module.exports = {
   startStream,
   stopStream,
+  startAutoDJBroadcast,
+  stopAutoDJBroadcast,
   addClient,
   broadcastAudio,
   getStatus
