@@ -1132,6 +1132,10 @@ function playStation(index){
 
   if(!station) return;
 
+  // JON FM always uses the platform's live backend stream.
+  if(station.name === "JON FM ETHIOPIA"){
+    station.url = BACKEND_URL + "/jonfm";
+  }
 
   if(currentAudio){
 
