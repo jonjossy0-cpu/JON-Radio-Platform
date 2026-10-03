@@ -131,15 +131,6 @@ function stopAutoDJ() {
 
 function startLive() {
   liveMode = true;
-  if (currentProcess) {
-    currentProcess.kill("SIGTERM");
-    currentProcess = null;
-  }
-  return true;
-}
-
-function startLive() {
-  liveMode = true;
 
   if (currentProcess) {
     try {
