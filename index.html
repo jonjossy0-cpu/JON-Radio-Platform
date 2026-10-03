@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>JON Radio Platform</title>
 
 <style>
@@ -10,7 +11,7 @@
   box-sizing:border-box;
   margin:0;
   padding:0;
-  font-family:Arial, sans-serif;
+  font-family:Arial,Helvetica,sans-serif;
 }
 
 body{
@@ -18,60 +19,76 @@ body{
   color:#172033;
 }
 
+button{
+  border:0;
+  border-radius:9px;
+  padding:11px 15px;
+  cursor:pointer;
+  font-weight:700;
+}
+
+button:active{
+  transform:scale(.98);
+}
+
 header{
   background:#0b63ce;
-  color:white;
+  color:#fff;
   padding:18px 20px;
   text-align:center;
-  box-shadow:0 3px 10px rgba(0,0,0,.12);
 }
 
 header h1{
-  font-size:24px;
+  font-size:25px;
 }
 
 header p{
-  margin-top:5px;
-  opacity:.9;
+  margin-top:6px;
   font-size:13px;
+  opacity:.9;
 }
 
 .container{
-  width:min(1100px,94%);
-  margin:25px auto;
+  width:min(1150px,94%);
+  margin:24px auto;
 }
+
+/* DASHBOARD */
 
 .stats{
   display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:15px;
-  margin-bottom:25px;
+  grid-template-columns:repeat(5,1fr);
+  gap:14px;
+  margin-bottom:22px;
 }
 
 .stat{
-  background:white;
-  padding:20px;
+  background:#fff;
   border-radius:14px;
-  box-shadow:0 3px 12px rgba(0,0,0,.07);
+  padding:18px 10px;
   text-align:center;
+  box-shadow:0 3px 12px rgba(0,0,0,.07);
 }
 
 .stat h2{
   color:#0b63ce;
-  font-size:28px;
+  font-size:27px;
 }
 
 .stat p{
-  margin-top:6px;
   color:#667085;
+  font-size:13px;
+  margin-top:5px;
 }
 
+/* SECTION */
+
 .section{
-  background:white;
-  padding:22px;
+  background:#fff;
   border-radius:15px;
-  box-shadow:0 3px 12px rgba(0,0,0,.07);
+  padding:22px;
   margin-bottom:22px;
+  box-shadow:0 3px 12px rgba(0,0,0,.07);
 }
 
 .section-title{
@@ -86,31 +103,86 @@ header p{
   font-size:20px;
 }
 
-button{
-  border:0;
-  border-radius:9px;
-  padding:11px 16px;
-  cursor:pointer;
+/* BUTTONS */
+
+.primary{
+  background:#0b63ce;
+  color:#fff;
+}
+
+.success{
+  background:#16a34a;
+  color:#fff;
+}
+
+.warning{
+  background:#f59e0b;
+  color:#fff;
+}
+
+.danger{
+  background:#dc2626;
+  color:#fff;
+}
+
+.dark{
+  background:#344054;
+  color:#fff;
+}
+
+.light{
+  background:#eaf2ff;
+  color:#0b63ce;
+}
+
+/* NOW PLAYING */
+
+.now-playing{
+  background:#f8fbff;
+  border:1px solid #dce8f8;
+  border-radius:13px;
+  padding:18px;
+}
+
+.live-indicator{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  background:#fee2e2;
+  color:#b91c1c;
+  padding:6px 10px;
+  border-radius:20px;
+  font-size:12px;
   font-weight:bold;
 }
 
-.add-btn{
-  background:#0b63ce;
-  color:white;
+.dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#dc2626;
 }
 
-.add-btn:hover{
-  opacity:.9;
+.now-title{
+  font-size:22px;
+  margin:13px 0 5px;
 }
+
+.next{
+  color:#667085;
+  font-size:14px;
+}
+
+/* STATIONS */
 
 .station{
   border:1px solid #e3e8ef;
   border-radius:13px;
   padding:18px;
-  margin-bottom:14px;
+  margin-bottom:13px;
   display:flex;
-  align-items:center;
   justify-content:space-between;
+  align-items:center;
   gap:15px;
   flex-wrap:wrap;
 }
@@ -126,8 +198,8 @@ button{
 }
 
 .station-info p{
-  font-size:13px;
   color:#667085;
+  font-size:13px;
   margin:3px 0;
   word-break:break-word;
 }
@@ -136,7 +208,7 @@ button{
   display:inline-block;
   padding:5px 9px;
   border-radius:20px;
-  font-size:12px;
+  font-size:11px;
   font-weight:bold;
   margin-top:6px;
 }
@@ -153,51 +225,150 @@ button{
 
 .station-actions{
   display:flex;
-  gap:8px;
+  gap:7px;
   flex-wrap:wrap;
 }
 
-.play-btn{
-  background:#16a34a;
-  color:white;
-}
+/* FORMS */
 
-.stop-btn{
-  background:#f59e0b;
-  color:white;
-}
-
-.delete-btn{
-  background:#dc2626;
-  color:white;
-}
-
-form{
+.form-grid{
   display:grid;
+  grid-template-columns:repeat(2,1fr);
   gap:13px;
+}
+
+.form-group{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.form-group.full{
+  grid-column:1/-1;
+}
+
+label{
+  font-size:13px;
+  font-weight:bold;
+  color:#475467;
 }
 
 input,select{
   width:100%;
-  padding:13px;
+  padding:12px;
   border:1px solid #d5dbe5;
   border-radius:9px;
   outline:none;
   font-size:14px;
 }
 
-input:focus,select:focus{
+input:focus,
+select:focus{
   border-color:#0b63ce;
 }
 
-.save-btn{
-  background:#0b63ce;
-  color:white;
+/* MUSIC */
+
+.music-item{
+  border:1px solid #e4e7ec;
+  border-radius:11px;
+  padding:13px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:9px;
+  flex-wrap:wrap;
 }
 
-.hidden{
-  display:none;
+.music-info{
+  min-width:180px;
+  flex:1;
 }
+
+.music-info strong{
+  display:block;
+  margin-bottom:4px;
+}
+
+.music-info small{
+  color:#667085;
+}
+
+.music-actions{
+  display:flex;
+  gap:6px;
+}
+
+/* PLAYLIST */
+
+.playlist-item{
+  padding:12px;
+  border:1px solid #e4e7ec;
+  border-radius:10px;
+  margin-bottom:8px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+.playlist-number{
+  background:#eaf2ff;
+  color:#0b63ce;
+  width:30px;
+  height:30px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  border-radius:50%;
+  font-weight:bold;
+}
+
+/* LIVE */
+
+.live-box{
+  border:1px solid #f0d0d0;
+  background:#fff8f8;
+  border-radius:13px;
+  padding:20px;
+}
+
+.live-status{
+  font-size:18px;
+  font-weight:bold;
+  margin-bottom:8px;
+}
+
+.live-help{
+  color:#667085;
+  font-size:13px;
+  line-height:1.6;
+  margin-bottom:15px;
+}
+
+/* SETTINGS */
+
+.setting-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  padding:14px 0;
+  border-bottom:1px solid #eaecf0;
+}
+
+.setting-row:last-child{
+  border-bottom:0;
+}
+
+.setting-row small{
+  display:block;
+  color:#667085;
+  margin-top:4px;
+}
+
+/* EMPTY */
 
 .empty{
   text-align:center;
@@ -205,29 +376,43 @@ input:focus,select:focus{
   color:#667085;
 }
 
-.info{
-  line-height:1.7;
-  color:#475467;
+/* HIDDEN */
+
+.hidden{
+  display:none !important;
 }
+
+/* FOOTER */
 
 footer{
   text-align:center;
-  padding:25px;
   color:#667085;
   font-size:13px;
+  padding:25px;
 }
 
-@media(max-width:750px){
+/* MOBILE */
+
+@media(max-width:900px){
+
+  .stats{
+    grid-template-columns:repeat(3,1fr);
+  }
+
+}
+
+@media(max-width:650px){
+
   .stats{
     grid-template-columns:repeat(2,1fr);
   }
 
-  .section{
-    padding:16px;
+  .form-grid{
+    grid-template-columns:1fr;
   }
 
-  .station{
-    align-items:flex-start;
+  .form-group.full{
+    grid-column:auto;
   }
 
   .station-actions{
@@ -237,28 +422,35 @@ footer{
   .station-actions button{
     flex:1;
   }
-}
 
-@media(max-width:450px){
-  header h1{
-    font-size:20px;
+  .section{
+    padding:16px;
   }
 
+  header h1{
+    font-size:21px;
+  }
+
+}
+
+@media(max-width:420px){
+
   .stats{
-    gap:9px;
+    gap:8px;
   }
 
   .stat{
-    padding:14px 8px;
+    padding:13px 7px;
   }
 
   .stat h2{
-    font-size:23px;
+    font-size:22px;
   }
 
   .stat p{
-    font-size:12px;
+    font-size:11px;
   }
+
 }
 </style>
 </head>
@@ -267,125 +459,390 @@ footer{
 
 <header>
   <h1>JON RADIO PLATFORM</h1>
-  <p>Multi-Radio Management & 24/7 Streaming Platform</p>
+  <p>Multi-Radio Management & 24/7 Broadcasting Platform</p>
 </header>
+
 
 <div class="container">
 
-  <!-- DASHBOARD -->
-  <div class="stats">
+<!-- ================= DASHBOARD ================= -->
 
-    <div class="stat">
-      <h2 id="stationCount">0</h2>
-      <p>Stations</p>
-    </div>
+<div class="stats">
 
-    <div class="stat">
-      <h2 id="onlineCount">0</h2>
-      <p>Online</p>
-    </div>
-
-    <div class="stat">
-      <h2 id="listenerCount">0</h2>
-      <p>Listeners</p>
-    </div>
-
-    <div class="stat">
-      <h2>24/7</h2>
-      <p>Broadcasting</p>
-    </div>
-
+  <div class="stat">
+    <h2 id="stationCount">0</h2>
+    <p>Stations</p>
   </div>
 
-
-  <!-- RADIO STATIONS -->
-  <div class="section">
-
-    <div class="section-title">
-      <h2>📻 Radio Stations</h2>
-      <button class="add-btn" onclick="showForm()">
-        + Add Station
-      </button>
-    </div>
-
-    <div id="stations"></div>
-
+  <div class="stat">
+    <h2 id="onlineCount">0</h2>
+    <p>Online</p>
   </div>
 
-
-  <!-- ADD STATION -->
-  <div id="addSection" class="section hidden">
-
-    <div class="section-title">
-      <h2>➕ Add Radio Station</h2>
-
-      <button onclick="hideForm()">
-        Close
-      </button>
-    </div>
-
-    <form id="stationForm">
-
-      <input
-        id="name"
-        type="text"
-        placeholder="Station Name"
-        required
-      >
-
-      <input
-        id="url"
-        type="url"
-        placeholder="Stream URL (https://...)"
-        required
-      >
-
-      <input
-        id="country"
-        type="text"
-        placeholder="Country"
-      >
-
-      <input
-        id="language"
-        type="text"
-        placeholder="Language"
-      >
-
-      <select id="format">
-        <option value="MP3">MP3</option>
-        <option value="AAC">AAC</option>
-      </select>
-
-      <button class="save-btn" type="submit">
-        Save Station
-      </button>
-
-    </form>
-
+  <div class="stat">
+    <h2 id="listenerCount">0</h2>
+    <p>Listeners</p>
   </div>
 
+  <div class="stat">
+    <h2 id="musicCount">0</h2>
+    <p>Music</p>
+  </div>
 
-  <!-- PLATFORM INFORMATION -->
-  <div class="section">
+  <div class="stat">
+    <h2 id="broadcastStatus">OFF</h2>
+    <p>Broadcast</p>
+  </div>
 
-    <h2 style="margin-bottom:12px;">
-      ℹ️ Platform Information
-    </h2>
+</div>
 
-    <div class="info">
-      <p>• Multiple radio station management</p>
-      <p>• MP3 / AAC stream support</p>
-      <p>• Station online / offline status</p>
-      <p>• Play and Stop controls</p>
-      <p>• Mobile-friendly dashboard</p>
-      <p>• Local station data storage</p>
-      <p>• Designed for future 24/7 broadcasting backend</p>
+
+<!-- ================= NOW PLAYING ================= -->
+
+<div class="section">
+
+  <div class="section-title">
+    <h2>🎧 Now Playing</h2>
+
+    <span id="broadcastBadge"
+          class="live-indicator">
+      <span class="dot"></span>
+      OFFLINE
+    </span>
+  </div>
+
+  <div class="now-playing">
+
+    <div class="now-title"
+         id="nowPlaying">
+      Nothing Playing
+    </div>
+
+    <div class="next"
+         id="nextSong">
+      Next: —
     </div>
 
   </div>
 
 </div>
+
+
+<!-- ================= RADIO STATIONS ================= -->
+
+<div class="section">
+
+  <div class="section-title">
+
+    <h2>📻 Radio Stations</h2>
+
+    <button class="primary"
+            onclick="showSection('addStationSection')">
+      + Add Station
+    </button>
+
+  </div>
+
+  <div id="stations"></div>
+
+</div>
+
+
+<!-- ================= ADD STATION ================= -->
+
+<div id="addStationSection"
+     class="section hidden">
+
+  <div class="section-title">
+    <h2>➕ Add Radio Station</h2>
+
+    <button class="light"
+            onclick="hideSection('addStationSection')">
+      Close
+    </button>
+  </div>
+
+  <form id="stationForm">
+
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label>Station Name</label>
+        <input id="stationName"
+               type="text"
+               placeholder="JON FM ETHIOPIA"
+               required>
+      </div>
+
+      <div class="form-group">
+        <label>Country</label>
+        <input id="stationCountry"
+               type="text"
+               placeholder="Ethiopia">
+      </div>
+
+      <div class="form-group">
+        <label>Language</label>
+        <input id="stationLanguage"
+               type="text"
+               placeholder="Amharic">
+      </div>
+
+      <div class="form-group">
+        <label>Format</label>
+
+        <select id="stationFormat">
+          <option value="MP3">MP3</option>
+          <option value="AAC">AAC</option>
+        </select>
+      </div>
+
+      <div class="form-group full">
+        <label>Stream URL</label>
+
+        <input id="stationUrl"
+               type="url"
+               placeholder="https://example.com/stream"
+               required>
+      </div>
+
+      <div class="form-group full">
+
+        <button class="primary"
+                type="submit">
+          Save Station
+        </button>
+
+      </div>
+
+    </div>
+
+  </form>
+
+</div>
+
+
+<!-- ================= MUSIC LIBRARY ================= -->
+
+<div class="section">
+
+  <div class="section-title">
+
+    <h2>🎵 Music Library</h2>
+
+    <label class="primary"
+           style="padding:11px 15px;
+                  border-radius:9px;
+                  cursor:pointer;">
+
+      + Upload Music
+
+      <input id="musicUpload"
+             type="file"
+             accept="audio/mpeg,audio/mp3,audio/wav,audio/*"
+             multiple
+             style="display:none;">
+
+    </label>
+
+  </div>
+
+  <div id="musicLibrary"></div>
+
+</div>
+
+
+<!-- ================= PLAYLIST ================= -->
+
+<div class="section">
+
+  <div class="section-title">
+
+    <h2>📋 JON FM Playlist</h2>
+
+    <button class="primary"
+            onclick="buildPlaylist()">
+      Create Playlist
+    </button>
+
+  </div>
+
+  <div id="playlist"></div>
+
+</div>
+
+
+<!-- ================= AUTO DJ ================= -->
+
+<div class="section">
+
+  <div class="section-title">
+
+    <h2>🤖 24/7 Auto DJ</h2>
+
+    <span id="autoDJStatus"
+          class="status offline">
+      OFF
+    </span>
+
+  </div>
+
+  <div class="live-help">
+    Auto DJ plays the station playlist continuously.
+    When Live Microphone is activated, Live takes priority.
+    When Live ends, Auto DJ can resume.
+  </div>
+
+  <button id="autoDJButton"
+          class="success"
+          onclick="toggleAutoDJ()">
+    ▶ Start Auto DJ
+  </button>
+
+  <button class="warning"
+          onclick="stopAutoDJ()">
+    ■ Stop Auto DJ
+  </button>
+
+</div>
+
+
+<!-- ================= LIVE MICROPHONE ================= -->
+
+<div class="section">
+
+  <div class="section-title">
+
+    <h2>🎙️ Live Microphone</h2>
+
+    <span id="liveStatus"
+          class="status offline">
+      OFFLINE
+    </span>
+
+  </div>
+
+  <div class="live-box">
+
+    <div class="live-status"
+         id="liveText">
+      Microphone is OFF
+    </div>
+
+    <div class="live-help">
+      Allow microphone access from this computer.
+      Live broadcasting requires the future JON FM
+      broadcast backend to send the microphone audio
+      to the public stream.
+    </div>
+
+    <button class="danger"
+            onclick="startLive()">
+      🔴 Start Live
+    </button>
+
+    <button class="dark"
+            onclick="stopLive()">
+      ■ Stop Live
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- ================= STATION SETTINGS ================= -->
+
+<div class="section">
+
+  <div class="section-title">
+    <h2>⚙️ Station Settings</h2>
+  </div>
+
+  <div class="setting-row">
+
+    <div>
+      <strong>Station</strong>
+      <small>Primary station</small>
+    </div>
+
+    <strong>JON FM ETHIOPIA</strong>
+
+  </div>
+
+  <div class="setting-row">
+
+    <div>
+      <strong>Broadcast Mode</strong>
+      <small>Automatic / Live</small>
+    </div>
+
+    <select id="broadcastMode"
+            style="width:160px;">
+
+      <option value="auto">Auto DJ</option>
+      <option value="live">Live</option>
+
+    </select>
+
+  </div>
+
+  <div class="setting-row">
+
+    <div>
+      <strong>Default Format</strong>
+      <small>Radio stream format</small>
+    </div>
+
+    <strong>MP3 / AAC</strong>
+
+  </div>
+
+  <div class="setting-row">
+
+    <div>
+      <strong>Broadcast</strong>
+      <small>24/7 system status</small>
+    </div>
+
+    <span id="settingBroadcast"
+          class="status offline">
+      OFFLINE
+    </span>
+
+  </div>
+
+</div>
+
+
+<!-- ================= PLATFORM INFO ================= -->
+
+<div class="section">
+
+  <h2 style="margin-bottom:12px;">
+    ℹ️ JON Radio Platform
+  </h2>
+
+  <div class="live-help">
+
+    <p>• Multi-radio station management</p>
+    <p>• JON FM Ethiopia primary station</p>
+    <p>• Music upload and library</p>
+    <p>• Playlist management</p>
+    <p>• 24/7 Auto DJ architecture</p>
+    <p>• Computer microphone Live architecture</p>
+    <p>• MP3 / AAC support</p>
+    <p>• Now Playing / Next Song</p>
+    <p>• Listener monitoring architecture</p>
+    <p>• Mobile-friendly administration</p>
+    <p>• Future real broadcasting backend</p>
+
+  </div>
+
+</div>
+
+</div>
+
 
 <footer>
   © 2026 JON MEDIA SERVICE — JON RADIO PLATFORM
@@ -394,13 +851,44 @@ footer{
 
 <script>
 
-let stations =
-  JSON.parse(localStorage.getItem("jonRadioStations")) || [];
+/* =====================================================
+   STORAGE
+===================================================== */
 
+let stations =
+  JSON.parse(
+    localStorage.getItem("jonRadioStations")
+  ) || [];
+
+
+let musicLibrary =
+  JSON.parse(
+    localStorage.getItem("jonMusicLibrary")
+  ) || [];
+
+
+let playlist =
+  JSON.parse(
+    localStorage.getItem("jonPlaylist")
+  ) || [];
+
+
+/* =====================================================
+   RUNTIME
+===================================================== */
 
 let currentAudio = null;
-let currentStationId = null;
+let currentStation = null;
 
+let autoDJ = false;
+let liveMode = false;
+
+let microphoneStream = null;
+
+
+/* =====================================================
+   SAVE
+===================================================== */
 
 function saveStations(){
 
@@ -411,6 +899,30 @@ function saveStations(){
 
 }
 
+
+function saveMusic(){
+
+  localStorage.setItem(
+    "jonMusicLibrary",
+    JSON.stringify(musicLibrary)
+  );
+
+}
+
+
+function savePlaylist(){
+
+  localStorage.setItem(
+    "jonPlaylist",
+    JSON.stringify(playlist)
+  );
+
+}
+
+
+/* =====================================================
+   HTML SECURITY
+===================================================== */
 
 function escapeHTML(value){
 
@@ -424,18 +936,49 @@ function escapeHTML(value){
 }
 
 
+/* =====================================================
+   SECTIONS
+===================================================== */
+
+function showSection(id){
+
+  document
+    .getElementById(id)
+    .classList.remove("hidden");
+
+  document
+    .getElementById(id)
+    .scrollIntoView({
+      behavior:"smooth"
+    });
+
+}
+
+
+function hideSection(id){
+
+  document
+    .getElementById(id)
+    .classList.add("hidden");
+
+}
+
+
+/* =====================================================
+   STATIONS
+===================================================== */
+
 function renderStations(){
 
-  const container =
+  const box =
     document.getElementById("stations");
 
-  container.innerHTML = "";
-
+  box.innerHTML = "";
 
   if(stations.length === 0){
 
-    container.innerHTML =
-      '<div class="empty">No radio stations added yet.</div>';
+    box.innerHTML =
+      '<div class="empty">No stations added yet.</div>';
 
   }
 
@@ -451,18 +994,26 @@ function renderStations(){
 
       <div class="station-info">
 
-        <h3>📻 ${escapeHTML(station.name)}</h3>
+        <h3>
+          📻 ${escapeHTML(station.name)}
+        </h3>
 
         <p>
-          🌍 ${escapeHTML(station.country || "Unknown")}
+          🌍 ${escapeHTML(
+            station.country || "Unknown"
+          )}
         </p>
 
         <p>
-          🗣 ${escapeHTML(station.language || "Unknown")}
+          🗣 ${escapeHTML(
+            station.language || "Unknown"
+          )}
         </p>
 
         <p>
-          🎵 ${escapeHTML(station.format)}
+          🎵 ${escapeHTML(
+            station.format || "MP3"
+          )}
         </p>
 
         <p>
@@ -470,7 +1021,7 @@ function renderStations(){
         </p>
 
         <span
-          id="status-${index}"
+          id="stationStatus-${index}"
           class="status offline">
           OFFLINE
         </span>
@@ -480,88 +1031,161 @@ function renderStations(){
       <div class="station-actions">
 
         <button
-          class="play-btn"
+          class="success"
           onclick="playStation(${index})">
           ▶ Play
         </button>
 
         <button
-          class="stop-btn"
+          class="warning"
           onclick="stopStation(${index})">
           ■ Stop
         </button>
 
         <button
-          class="delete-btn"
+          class="danger"
           onclick="deleteStation(${index})">
           🗑 Delete
         </button>
 
       </div>
+
     `;
 
-    container.appendChild(item);
+    box.appendChild(item);
 
   });
-
 
   updateStats();
 
 }
 
 
+/* =====================================================
+   ADD STATION
+===================================================== */
+
+document
+.getElementById("stationForm")
+.addEventListener(
+  "submit",
+  function(event){
+
+    event.preventDefault();
+
+    const station = {
+
+      name:
+        document
+        .getElementById("stationName")
+        .value.trim(),
+
+      country:
+        document
+        .getElementById("stationCountry")
+        .value.trim(),
+
+      language:
+        document
+        .getElementById("stationLanguage")
+        .value.trim(),
+
+      format:
+        document
+        .getElementById("stationFormat")
+        .value,
+
+      url:
+        document
+        .getElementById("stationUrl")
+        .value.trim()
+
+    };
+
+
+    stations.push(station);
+
+    saveStations();
+
+    renderStations();
+
+    this.reset();
+
+    hideSection("addStationSection");
+
+  }
+);
+
+
+/* =====================================================
+   PLAY STATION
+===================================================== */
+
 function playStation(index){
 
-  const station = stations[index];
+  const station =
+    stations[index];
+
+  if(!station) return;
+
 
   if(currentAudio){
 
     currentAudio.pause();
+
     currentAudio.src = "";
 
   }
 
 
-  currentAudio = new Audio();
-
-  currentAudio.src = station.url;
+  currentAudio =
+    new Audio(station.url);
 
   currentAudio.preload = "none";
 
-  currentStationId = index;
+  currentStation = index;
 
 
-  currentAudio.play()
+  currentAudio
+    .play()
     .then(()=>{
 
-      setStatus(index,true);
+      setStationStatus(index,true);
+
+      document
+        .getElementById("nowPlaying")
+        .textContent =
+          station.name;
+
+      document
+        .getElementById("nextSong")
+        .textContent =
+          "Next: Live Station Stream";
 
     })
     .catch(()=>{
 
-      setStatus(index,false);
+      setStationStatus(index,false);
 
       alert(
-        "The stream could not be played. Check the stream URL and browser support."
+        "Stream could not be played. Check the URL and browser support."
       );
 
     });
 
-
-  currentAudio.addEventListener(
-    "error",
-    ()=>{
-      setStatus(index,false);
-    }
-  );
-
 }
 
 
+/* =====================================================
+   STOP STATION
+===================================================== */
+
 function stopStation(index){
 
-  if(currentAudio &&
-     currentStationId === index){
+  if(
+    currentAudio &&
+    currentStation === index
+  ){
 
     currentAudio.pause();
 
@@ -569,24 +1193,26 @@ function stopStation(index){
 
     currentAudio = null;
 
-    currentStationId = null;
+    currentStation = null;
 
   }
 
-  setStatus(index,false);
+  setStationStatus(index,false);
 
 }
 
 
-function setStatus(index,isOnline){
+function setStationStatus(index,online){
 
   const status =
-    document.getElementById("status-"+index);
+    document.getElementById(
+      "stationStatus-"+index
+    );
 
   if(!status) return;
 
 
-  if(isOnline){
+  if(online){
 
     status.textContent = "ONLINE";
 
@@ -602,22 +1228,37 @@ function setStatus(index,isOnline){
 
   }
 
-
   updateStats();
 
 }
 
 
+/* =====================================================
+   DELETE STATION
+===================================================== */
+
 function deleteStation(index){
 
-  const station = stations[index];
+  const station =
+    stations[index];
 
-  if(!confirm(
-    "Delete " + station.name + "?"
-  )) return;
+  if(!station) return;
 
 
-  if(currentStationId === index){
+  if(
+    !confirm(
+      "Delete " +
+      station.name +
+      "?"
+    )
+  ){
+
+    return;
+
+  }
+
+
+  if(currentStation === index){
 
     stopStation(index);
 
@@ -633,72 +1274,556 @@ function deleteStation(index){
 }
 
 
-function showForm(){
-
-  document
-    .getElementById("addSection")
-    .classList.remove("hidden");
-
-  document
-    .getElementById("addSection")
-    .scrollIntoView({
-      behavior:"smooth"
-    });
-
-}
-
-
-function hideForm(){
-
-  document
-    .getElementById("addSection")
-    .classList.add("hidden");
-
-}
-
+/* =====================================================
+   MUSIC UPLOAD
+===================================================== */
 
 document
-  .getElementById("stationForm")
-  .addEventListener(
-    "submit",
-    function(event){
+.getElementById("musicUpload")
+.addEventListener(
+  "change",
+  function(){
 
-      event.preventDefault();
-
-
-      const station = {
-
-        name:
-          document.getElementById("name").value.trim(),
-
-        url:
-          document.getElementById("url").value.trim(),
-
-        country:
-          document.getElementById("country").value.trim(),
-
-        language:
-          document.getElementById("language").value.trim(),
-
-        format:
-          document.getElementById("format").value
-
-      };
+    const files =
+      Array.from(this.files || []);
 
 
-      stations.push(station);
+    files.forEach(file=>{
 
-      saveStations();
+      musicLibrary.push({
 
-      renderStations();
+        id:
+          Date.now() +
+          "-" +
+          Math.random()
+            .toString(36)
+            .slice(2),
 
-      this.reset();
+        name:file.name,
 
-      hideForm();
+        type:file.type || "audio",
 
-    }
-  );
+        size:file.size
 
+      });
+
+    });
+
+
+    saveMusic();
+
+    renderMusic();
+
+    updateStats();
+
+    this.value = "";
+
+  }
+);
+
+
+/* =====================================================
+   MUSIC LIBRARY
+===================================================== */
+
+function renderMusic(){
+
+  const box =
+    document.getElementById(
+      "musicLibrary"
+    );
+
+  box.innerHTML = "";
+
+
+  if(musicLibrary.length === 0){
+
+    box.innerHTML =
+      '<div class="empty">No music uploaded yet.</div>';
+
+    return;
+
+  }
+
+
+  musicLibrary.forEach((music,index)=>{
+
+    const item =
+      document.createElement("div");
+
+    item.className =
+      "music-item";
+
+    item.innerHTML = `
+
+      <div class="music-info">
+
+        <strong>
+          🎵 ${escapeHTML(music.name)}
+        </strong>
+
+        <small>
+          ${formatBytes(music.size)}
+        </small>
+
+      </div>
+
+      <div class="music-actions">
+
+        <button
+          class="light"
+          onclick="addToPlaylist(${index})">
+          + Playlist
+        </button>
+
+        <button
+          class="danger"
+          onclick="deleteMusic(${index})">
+          Delete
+        </button>
+
+      </div>
+
+    `;
+
+    box.appendChild(item);
+
+  });
+
+}
+
+
+function formatBytes(bytes){
+
+  if(!bytes) return "Unknown size";
+
+  const mb =
+    bytes / 1024 / 1024;
+
+  return mb.toFixed(2) + " MB";
+
+}
+
+
+function deleteMusic(index){
+
+  if(
+    !confirm(
+      "Delete this music from the library?"
+    )
+  ){
+
+    return;
+
+  }
+
+
+  musicLibrary.splice(index,1);
+
+  saveMusic();
+
+  renderMusic();
+
+  updateStats();
+
+}
+
+
+/* =====================================================
+   PLAYLIST
+===================================================== */
+
+function addToPlaylist(index){
+
+  const music =
+    musicLibrary[index];
+
+  if(!music) return;
+
+
+  playlist.push({
+
+    id:music.id,
+
+    name:music.name
+
+  });
+
+
+  savePlaylist();
+
+  renderPlaylist();
+
+}
+
+
+function buildPlaylist(){
+
+  playlist =
+    musicLibrary.map(music=>({
+
+      id:music.id,
+
+      name:music.name
+
+    }));
+
+
+  savePlaylist();
+
+  renderPlaylist();
+
+}
+
+
+function renderPlaylist(){
+
+  const box =
+    document.getElementById(
+      "playlist"
+    );
+
+  box.innerHTML = "";
+
+
+  if(playlist.length === 0){
+
+    box.innerHTML =
+      '<div class="empty">Playlist is empty.</div>';
+
+    return;
+
+  }
+
+
+  playlist.forEach((song,index)=>{
+
+    const item =
+      document.createElement("div");
+
+    item.className =
+      "playlist-item";
+
+    item.innerHTML = `
+
+      <div style="
+        display:flex;
+        align-items:center;
+        gap:10px;
+        flex:1;
+      ">
+
+        <span class="playlist-number">
+          ${index+1}
+        </span>
+
+        <strong>
+          ${escapeHTML(song.name)}
+        </strong>
+
+      </div>
+
+      <button
+        class="danger"
+        onclick="removePlaylist(${index})">
+        Remove
+      </button>
+
+    `;
+
+    box.appendChild(item);
+
+  });
+
+}
+
+
+function removePlaylist(index){
+
+  playlist.splice(index,1);
+
+  savePlaylist();
+
+  renderPlaylist();
+
+}
+
+
+/* =====================================================
+   AUTO DJ
+===================================================== */
+
+function toggleAutoDJ(){
+
+  if(autoDJ){
+
+    stopAutoDJ();
+
+    return;
+
+  }
+
+
+  if(liveMode){
+
+    alert(
+      "Live microphone is active. Stop Live first."
+    );
+
+    return;
+
+  }
+
+
+  autoDJ = true;
+
+  updateBroadcastUI();
+
+}
+
+
+function stopAutoDJ(){
+
+  autoDJ = false;
+
+  updateBroadcastUI();
+
+}
+
+
+/* =====================================================
+   LIVE MICROPHONE
+===================================================== */
+
+async function startLive(){
+
+  if(liveMode) return;
+
+
+  try{
+
+    microphoneStream =
+      await navigator.mediaDevices
+        .getUserMedia({
+          audio:true
+        });
+
+
+    liveMode = true;
+
+    autoDJ = false;
+
+    updateBroadcastUI();
+
+    document
+      .getElementById("liveText")
+      .textContent =
+        "Microphone is ON";
+
+  }catch(error){
+
+    alert(
+      "Microphone permission was not granted."
+    );
+
+  }
+
+}
+
+
+function stopLive(){
+
+  if(microphoneStream){
+
+    microphoneStream
+      .getTracks()
+      .forEach(track=>{
+        track.stop();
+      });
+
+    microphoneStream = null;
+
+  }
+
+
+  liveMode = false;
+
+  updateBroadcastUI();
+
+  document
+    .getElementById("liveText")
+    .textContent =
+      "Microphone is OFF";
+
+}
+
+
+/* =====================================================
+   BROADCAST UI
+===================================================== */
+
+function updateBroadcastUI(){
+
+  const broadcast =
+    liveMode || autoDJ;
+
+
+  const badge =
+    document.getElementById(
+      "broadcastBadge"
+    );
+
+
+  const status =
+    document.getElementById(
+      "broadcastStatus"
+    );
+
+
+  const setting =
+    document.getElementById(
+      "settingBroadcast"
+    );
+
+
+  const liveStatus =
+    document.getElementById(
+      "liveStatus"
+    );
+
+
+  const autoStatus =
+    document.getElementById(
+      "autoDJStatus"
+    );
+
+
+  if(liveMode){
+
+    badge.innerHTML =
+      '<span class="dot"></span> LIVE';
+
+    status.textContent =
+      "LIVE";
+
+    setting.textContent =
+      "LIVE";
+
+    setting.className =
+      "status online";
+
+    liveStatus.textContent =
+      "LIVE";
+
+    liveStatus.className =
+      "status online";
+
+    autoStatus.textContent =
+      "PAUSED";
+
+    autoStatus.className =
+      "status offline";
+
+    document
+      .getElementById("nowPlaying")
+      .textContent =
+        "🎙️ JON FM LIVE";
+
+    document
+      .getElementById("nextSong")
+      .textContent =
+        "Live microphone is active";
+
+  }else if(autoDJ){
+
+    badge.innerHTML =
+      '<span class="dot"></span> AUTO DJ';
+
+    status.textContent =
+      "ON";
+
+    setting.textContent =
+      "AUTO DJ";
+
+    setting.className =
+      "status online";
+
+    liveStatus.textContent =
+      "OFFLINE";
+
+    liveStatus.className =
+      "status offline";
+
+    autoStatus.textContent =
+      "ON";
+
+    autoStatus.className =
+      "status online";
+
+    document
+      .getElementById("nowPlaying")
+      .textContent =
+        "🤖 JON FM Auto DJ";
+
+    document
+      .getElementById("nextSong")
+      .textContent =
+        "Next: Playlist";
+
+  }else{
+
+    badge.innerHTML =
+      '<span class="dot"></span> OFFLINE';
+
+    status.textContent =
+      "OFF";
+
+    setting.textContent =
+      "OFFLINE";
+
+    setting.className =
+      "status offline";
+
+    liveStatus.textContent =
+      "OFFLINE";
+
+    liveStatus.className =
+      "status offline";
+
+    autoStatus.textContent =
+      "OFF";
+
+    autoStatus.className =
+      "status offline";
+
+    document
+      .getElementById("nowPlaying")
+      .textContent =
+        "Nothing Playing";
+
+    document
+      .getElementById("nextSong")
+      .textContent =
+        "Next: —";
+
+  }
+
+
+  document
+    .getElementById("autoDJButton")
+    .textContent =
+      autoDJ
+        ? "⏸ Auto DJ Running"
+        : "▶ Start Auto DJ";
+
+  updateStats();
+
+}
+
+
+/* =====================================================
+   STATS
+===================================================== */
 
 function updateStats(){
 
@@ -710,15 +1835,19 @@ function updateStats(){
 
   let online = 0;
 
+
   stations.forEach((station,index)=>{
 
     const status =
       document.getElementById(
-        "status-"+index
+        "stationStatus-"+index
       );
 
-    if(status &&
-       status.classList.contains("online")){
+
+    if(
+      status &&
+      status.classList.contains("online")
+    ){
 
       online++;
 
@@ -733,20 +1862,90 @@ function updateStats(){
       online;
 
 
-  /*
-    Real listener counting will be connected
-    to the backend later.
-  */
+  document
+    .getElementById("musicCount")
+    .textContent =
+      musicLibrary.length;
+
 
   document
     .getElementById("listenerCount")
     .textContent =
       "0";
 
+
+  document
+    .getElementById("broadcastStatus")
+    .textContent =
+      liveMode
+        ? "LIVE"
+        : autoDJ
+          ? "ON"
+          : "OFF";
+
 }
 
 
+/* =====================================================
+   BROADCAST MODE
+===================================================== */
+
+document
+.getElementById("broadcastMode")
+.addEventListener(
+  "change",
+  function(){
+
+    if(this.value === "live"){
+
+      stopAutoDJ();
+
+    }else{
+
+      stopLive();
+
+    }
+
+  }
+);
+
+
+/* =====================================================
+   DEFAULT JON FM STATION
+===================================================== */
+
+if(stations.length === 0){
+
+  stations.push({
+
+    name:"JON FM ETHIOPIA",
+
+    country:"Ethiopia",
+
+    language:"Amharic",
+
+    format:"AAC",
+
+    url:""
+
+  });
+
+  saveStations();
+
+}
+
+
+/* =====================================================
+   INITIALIZE
+===================================================== */
+
 renderStations();
+
+renderMusic();
+
+renderPlaylist();
+
+updateBroadcastUI();
 
 </script>
 
