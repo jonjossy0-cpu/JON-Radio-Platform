@@ -6,213 +6,258 @@
 <title>JON Radio Platform</title>
 
 <style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  font-family:Arial, sans-serif;
+}
 
 body{
   background:#f4f7fb;
-  color:#111827;
+  color:#172033;
 }
 
 header{
   background:#0b63ce;
   color:white;
-  padding:24px 16px;
+  padding:18px 20px;
   text-align:center;
+  box-shadow:0 3px 10px rgba(0,0,0,.12);
 }
 
-header h1{font-size:26px;margin-bottom:7px}
-header p{font-size:14px;opacity:.9}
+header h1{
+  font-size:24px;
+}
+
+header p{
+  margin-top:5px;
+  opacity:.9;
+  font-size:13px;
+}
 
 .container{
-  width:100%;
-  max-width:900px;
-  margin:auto;
-  padding:18px;
-}
-
-.card{
-  background:white;
-  border-radius:16px;
-  padding:18px;
-  margin-bottom:16px;
-  box-shadow:0 4px 15px rgba(0,0,0,.08);
-}
-
-.section-title{
-  font-size:20px;
-  margin-bottom:15px;
+  width:min(1100px,94%);
+  margin:25px auto;
 }
 
 .stats{
   display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:12px;
+  grid-template-columns:repeat(4,1fr);
+  gap:15px;
+  margin-bottom:25px;
 }
 
 .stat{
-  background:#f1f5f9;
-  border-radius:12px;
-  padding:16px;
+  background:white;
+  padding:20px;
+  border-radius:14px;
+  box-shadow:0 3px 12px rgba(0,0,0,.07);
   text-align:center;
 }
 
-.stat strong{
-  display:block;
-  font-size:24px;
-  margin-bottom:5px;
+.stat h2{
+  color:#0b63ce;
+  font-size:28px;
 }
 
-.station{
-  border:1px solid #e5e7eb;
-  border-radius:14px;
-  padding:15px;
-  margin-bottom:14px;
+.stat p{
+  margin-top:6px;
+  color:#667085;
 }
 
-.station-top{
+.section{
+  background:white;
+  padding:22px;
+  border-radius:15px;
+  box-shadow:0 3px 12px rgba(0,0,0,.07);
+  margin-bottom:22px;
+}
+
+.section-title{
   display:flex;
+  justify-content:space-between;
   align-items:center;
-  gap:14px;
+  gap:10px;
+  margin-bottom:18px;
 }
 
-.logo{
-  width:62px;
-  height:62px;
-  border-radius:12px;
-  background:#0b63ce;
-  color:white;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:bold;
-  font-size:18px;
-  flex-shrink:0;
-}
-
-.station-info{flex:1}
-
-.station-info h3{
-  font-size:18px;
-  margin-bottom:6px;
-}
-
-.online{
-  color:#16a34a;
-  font-size:13px;
-  font-weight:bold;
-}
-
-.offline{
-  color:#dc2626;
-  font-size:13px;
-  font-weight:bold;
-}
-
-.meta{
-  color:#64748b;
-  font-size:13px;
-  margin-top:5px;
-  word-break:break-word;
-}
-
-.buttons{
-  display:flex;
-  gap:8px;
-  margin-top:14px;
-  flex-wrap:wrap;
+.section-title h2{
+  font-size:20px;
 }
 
 button{
-  border:none;
+  border:0;
   border-radius:9px;
-  padding:11px 15px;
-  font-size:14px;
-  font-weight:bold;
+  padding:11px 16px;
   cursor:pointer;
+  font-weight:bold;
 }
 
-.play{
+.add-btn{
   background:#0b63ce;
   color:white;
 }
 
-.stop{
+.add-btn:hover{
+  opacity:.9;
+}
+
+.station{
+  border:1px solid #e3e8ef;
+  border-radius:13px;
+  padding:18px;
+  margin-bottom:14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  flex-wrap:wrap;
+}
+
+.station-info{
+  flex:1;
+  min-width:220px;
+}
+
+.station-info h3{
+  font-size:18px;
+  margin-bottom:7px;
+}
+
+.station-info p{
+  font-size:13px;
+  color:#667085;
+  margin:3px 0;
+  word-break:break-word;
+}
+
+.status{
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:bold;
+  margin-top:6px;
+}
+
+.online{
+  background:#dcfce7;
+  color:#15803d;
+}
+
+.offline{
+  background:#fee2e2;
+  color:#b91c1c;
+}
+
+.station-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.play-btn{
+  background:#16a34a;
+  color:white;
+}
+
+.stop-btn{
+  background:#f59e0b;
+  color:white;
+}
+
+.delete-btn{
   background:#dc2626;
   color:white;
 }
 
-.delete{
-  background:#e5e7eb;
-  color:#111827;
+form{
+  display:grid;
+  gap:13px;
 }
 
-.add{
+input,select{
   width:100%;
-  background:#111827;
-  color:white;
-}
-
-.form{
-  display:none;
-  margin-top:16px;
-}
-
-.form input,
-.form select{
-  width:100%;
-  padding:12px;
-  margin-bottom:10px;
-  border:1px solid #cbd5e1;
+  padding:13px;
+  border:1px solid #d5dbe5;
   border-radius:9px;
+  outline:none;
   font-size:14px;
-  background:white;
 }
 
-.save{
-  background:#16a34a;
+input:focus,select:focus{
+  border-color:#0b63ce;
+}
+
+.save-btn{
+  background:#0b63ce;
   color:white;
-  width:100%;
 }
 
-.cancel{
-  background:#e5e7eb;
-  color:#111827;
-  width:100%;
-  margin-top:8px;
-}
-
-audio{
-  width:100%;
-  margin-top:12px;
+.hidden{
+  display:none;
 }
 
 .empty{
   text-align:center;
-  color:#64748b;
-  padding:15px;
-  font-size:14px;
+  padding:30px;
+  color:#667085;
 }
 
 .info{
-  background:#eff6ff;
-  border-left:4px solid #0b63ce;
-  padding:13px;
-  border-radius:8px;
-  font-size:13px;
-  line-height:1.5;
-  margin-top:14px;
+  line-height:1.7;
+  color:#475467;
 }
 
 footer{
   text-align:center;
-  padding:25px 10px;
-  color:#64748b;
+  padding:25px;
+  color:#667085;
   font-size:13px;
 }
 
-@media(min-width:650px){
+@media(max-width:750px){
   .stats{
-    grid-template-columns:repeat(4,1fr);
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .section{
+    padding:16px;
+  }
+
+  .station{
+    align-items:flex-start;
+  }
+
+  .station-actions{
+    width:100%;
+  }
+
+  .station-actions button{
+    flex:1;
+  }
+}
+
+@media(max-width:450px){
+  header h1{
+    font-size:20px;
+  }
+
+  .stats{
+    gap:9px;
+  }
+
+  .stat{
+    padding:14px 8px;
+  }
+
+  .stat h2{
+    font-size:23px;
+  }
+
+  .stat p{
+    font-size:12px;
   }
 }
 </style>
@@ -222,77 +267,77 @@ footer{
 
 <header>
   <h1>JON RADIO PLATFORM</h1>
-  <p>Multi-Radio Management & Streaming Platform</p>
+  <p>Multi-Radio Management & 24/7 Streaming Platform</p>
 </header>
 
-<main class="container">
+<div class="container">
 
   <!-- DASHBOARD -->
-  <div class="card">
-    <h2 class="section-title">Dashboard</h2>
+  <div class="stats">
 
-    <div class="stats">
-
-      <div class="stat">
-        <strong id="stationCount">0</strong>
-        Stations
-      </div>
-
-      <div class="stat">
-        <strong id="onlineCount">0</strong>
-        Online
-      </div>
-
-      <div class="stat">
-        <strong id="listenerCount">0</strong>
-        Listeners
-      </div>
-
-      <div class="stat">
-        <strong>24/7</strong>
-        Service
-      </div>
-
+    <div class="stat">
+      <h2 id="stationCount">0</h2>
+      <p>Stations</p>
     </div>
+
+    <div class="stat">
+      <h2 id="onlineCount">0</h2>
+      <p>Online</p>
+    </div>
+
+    <div class="stat">
+      <h2 id="listenerCount">0</h2>
+      <p>Listeners</p>
+    </div>
+
+    <div class="stat">
+      <h2>24/7</h2>
+      <p>Broadcasting</p>
+    </div>
+
   </div>
 
 
   <!-- RADIO STATIONS -->
-  <div class="card">
+  <div class="section">
 
-    <h2 class="section-title">Radio Stations</h2>
-
-    <div id="stationList"></div>
-
-    <div id="emptyMessage" class="empty">
-      No radio stations added yet.
+    <div class="section-title">
+      <h2>📻 Radio Stations</h2>
+      <button class="add-btn" onclick="showForm()">
+        + Add Station
+      </button>
     </div>
+
+    <div id="stations"></div>
 
   </div>
 
 
-  <!-- STATION MANAGEMENT -->
-  <div class="card">
+  <!-- ADD STATION -->
+  <div id="addSection" class="section hidden">
 
-    <h2 class="section-title">Station Management</h2>
+    <div class="section-title">
+      <h2>➕ Add Radio Station</h2>
 
-    <button class="add" onclick="showForm()">
-      ＋ Add Radio Station
-    </button>
+      <button onclick="hideForm()">
+        Close
+      </button>
+    </div>
 
-
-    <div id="stationForm" class="form">
+    <form id="stationForm">
 
       <input
         id="name"
         type="text"
         placeholder="Station Name"
+        required
       >
 
       <input
         id="url"
         type="url"
-        placeholder="Stream URL (MP3/AAC)"
+        placeholder="Stream URL (https://...)"
+        required
       >
 
       <input
@@ -312,54 +357,52 @@ footer{
         <option value="AAC">AAC</option>
       </select>
 
-      <button class="save" onclick="saveStation()">
-        💾 Save Station
+      <button class="save-btn" type="submit">
+        Save Station
       </button>
 
-      <button class="cancel" onclick="hideForm()">
-        Cancel
-      </button>
-
-    </div>
+    </form>
 
   </div>
 
 
   <!-- PLATFORM INFORMATION -->
-  <div class="card">
+  <div class="section">
 
-    <h2 class="section-title">Platform</h2>
+    <h2 style="margin-bottom:12px;">
+      ℹ️ Platform Information
+    </h2>
 
     <div class="info">
-      JON Radio Platform is being developed as a
-      multi-radio management and streaming platform.
-      More stations, 24/7 broadcasting, monitoring,
-      automatic restart and server controls will be
-      added in future stages.
+      <p>• Multiple radio station management</p>
+      <p>• MP3 / AAC stream support</p>
+      <p>• Station online / offline status</p>
+      <p>• Play and Stop controls</p>
+      <p>• Mobile-friendly dashboard</p>
+      <p>• Local station data storage</p>
+      <p>• Designed for future 24/7 broadcasting backend</p>
     </div>
 
   </div>
 
-</main>
-
+</div>
 
 <footer>
-  © 2026 JON MEDIA SERVICE — For Advanced Growth.
+  © 2026 JON MEDIA SERVICE — JON RADIO PLATFORM
 </footer>
 
 
 <script>
 
-let stations = JSON.parse(
-  localStorage.getItem("jonRadioStations") || "[]"
-);
-
-let activeAudio = null;
+let stations =
+  JSON.parse(localStorage.getItem("jonRadioStations")) || [];
 
 
-/* SAVE DATA */
+let currentAudio = null;
+let currentStationId = null;
 
-function saveData(){
+
+function saveStations(){
 
   localStorage.setItem(
     "jonRadioStations",
@@ -369,331 +412,339 @@ function saveData(){
 }
 
 
-/* SHOW FORM */
+function escapeHTML(value){
 
-function showForm(){
-
-  document.getElementById("stationForm").style.display =
-    "block";
-
-}
-
-
-/* HIDE FORM */
-
-function hideForm(){
-
-  document.getElementById("stationForm").style.display =
-    "none";
-
-  document.getElementById("name").value = "";
-  document.getElementById("url").value = "";
-  document.getElementById("country").value = "";
-  document.getElementById("language").value = "";
-  document.getElementById("format").value = "MP3";
+  return String(value || "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
 
 }
 
-
-/* ADD STATION */
-
-function saveStation(){
-
-  const name =
-    document.getElementById("name").value.trim();
-
-  const url =
-    document.getElementById("url").value.trim();
-
-  const country =
-    document.getElementById("country").value.trim();
-
-  const language =
-    document.getElementById("language").value.trim();
-
-  const format =
-    document.getElementById("format").value;
-
-
-  if(!name){
-
-    alert("Please enter Station Name.");
-    return;
-
-  }
-
-
-  if(!url){
-
-    alert("Please enter Stream URL.");
-    return;
-
-  }
-
-
-  stations.push({
-
-    id:Date.now(),
-
-    name:name,
-
-    url:url,
-
-    country:country || "Unknown",
-
-    language:language || "Unknown",
-
-    format:format
-
-  });
-
-
-  saveData();
-
-  hideForm();
-
-  renderStations();
-
-}
-
-
-/* DELETE */
-
-function deleteStation(id){
-
-  if(!confirm("Delete this radio station?")){
-
-    return;
-
-  }
-
-
-  stations =
-    stations.filter(
-      station => station.id !== id
-    );
-
-
-  saveData();
-
-  renderStations();
-
-}
-
-
-/* PLAY */
-
-function playStation(id){
-
-  const station =
-    stations.find(
-      station => station.id === id
-    );
-
-
-  if(!station) return;
-
-
-  if(activeAudio){
-
-    activeAudio.pause();
-
-    activeAudio.removeAttribute("src");
-
-  }
-
-
-  const audio =
-    document.getElementById(
-      "audio-" + id
-    );
-
-
-  if(!audio) return;
-
-
-  audio.style.display = "block";
-
-  audio.src = station.url;
-
-  activeAudio = audio;
-
-
-  audio.play().catch(function(){
-
-    alert(
-      "The stream could not start. Check the Stream URL and browser support."
-    );
-
-  });
-
-}
-
-
-/* STOP */
-
-function stopStation(id){
-
-  const audio =
-    document.getElementById(
-      "audio-" + id
-    );
-
-
-  if(!audio) return;
-
-
-  audio.pause();
-
-  audio.removeAttribute("src");
-
-  audio.load();
-
-}
-
-
-/* DISPLAY STATIONS */
 
 function renderStations(){
 
-  const list =
-    document.getElementById(
-      "stationList"
-    );
+  const container =
+    document.getElementById("stations");
 
-
-  const empty =
-    document.getElementById(
-      "emptyMessage"
-    );
-
-
-  list.innerHTML = "";
-
-
-  document.getElementById(
-    "stationCount"
-  ).textContent = stations.length;
-
-
-  document.getElementById(
-    "onlineCount"
-  ).textContent = stations.length;
+  container.innerHTML = "";
 
 
   if(stations.length === 0){
 
-    empty.style.display = "block";
-
-    return;
+    container.innerHTML =
+      '<div class="empty">No radio stations added yet.</div>';
 
   }
 
 
-  empty.style.display = "none";
+  stations.forEach((station,index)=>{
 
-
-  stations.forEach(function(station){
-
-    const card =
+    const item =
       document.createElement("div");
 
+    item.className = "station";
 
-    card.className = "station";
+    item.innerHTML = `
 
+      <div class="station-info">
 
-    card.innerHTML = `
+        <h3>📻 ${escapeHTML(station.name)}</h3>
 
-      <div class="station-top">
+        <p>
+          🌍 ${escapeHTML(station.country || "Unknown")}
+        </p>
 
-        <div class="logo">
-          JON
-        </div>
+        <p>
+          🗣 ${escapeHTML(station.language || "Unknown")}
+        </p>
 
-        <div class="station-info">
+        <p>
+          🎵 ${escapeHTML(station.format)}
+        </p>
 
-          <h3>
-            ${escapeHtml(station.name)}
-          </h3>
+        <p>
+          🔗 ${escapeHTML(station.url)}
+        </p>
 
-          <div class="online">
-            ● Ready
-          </div>
-
-          <div class="meta">
-            🌍 ${escapeHtml(station.country)}
-            · 🗣️ ${escapeHtml(station.language)}
-            · 🎵 ${escapeHtml(station.format)}
-          </div>
-
-          <div class="meta">
-            🔗 ${escapeHtml(station.url)}
-          </div>
-
-        </div>
+        <span
+          id="status-${index}"
+          class="status offline">
+          OFFLINE
+        </span>
 
       </div>
 
-
-      <div class="buttons">
+      <div class="station-actions">
 
         <button
-          class="play"
-          onclick="playStation(${station.id})">
+          class="play-btn"
+          onclick="playStation(${index})">
           ▶ Play
         </button>
 
         <button
-          class="stop"
-          onclick="stopStation(${station.id})">
+          class="stop-btn"
+          onclick="stopStation(${index})">
           ■ Stop
         </button>
 
         <button
-          class="delete"
-          onclick="deleteStation(${station.id})">
+          class="delete-btn"
+          onclick="deleteStation(${index})">
           🗑 Delete
         </button>
 
       </div>
-
-
-      <audio
-        id="audio-${station.id}"
-        controls
-        style="display:none;">
-      </audio>
-
     `;
 
-
-    list.appendChild(card);
+    container.appendChild(item);
 
   });
 
-}
 
-
-/* SECURITY: ESCAPE HTML */
-
-function escapeHtml(value){
-
-  return String(value)
-
-    .replaceAll("&","&amp;")
-
-    .replaceAll("<","&lt;")
-
-    .replaceAll(">","&gt;")
-
-    .replaceAll('"',"&quot;")
-
-    .replaceAll("'","&#039;");
+  updateStats();
 
 }
 
 
-/* START */
+function playStation(index){
+
+  const station = stations[index];
+
+  if(currentAudio){
+
+    currentAudio.pause();
+    currentAudio.src = "";
+
+  }
+
+
+  currentAudio = new Audio();
+
+  currentAudio.src = station.url;
+
+  currentAudio.preload = "none";
+
+  currentStationId = index;
+
+
+  currentAudio.play()
+    .then(()=>{
+
+      setStatus(index,true);
+
+    })
+    .catch(()=>{
+
+      setStatus(index,false);
+
+      alert(
+        "The stream could not be played. Check the stream URL and browser support."
+      );
+
+    });
+
+
+  currentAudio.addEventListener(
+    "error",
+    ()=>{
+      setStatus(index,false);
+    }
+  );
+
+}
+
+
+function stopStation(index){
+
+  if(currentAudio &&
+     currentStationId === index){
+
+    currentAudio.pause();
+
+    currentAudio.src = "";
+
+    currentAudio = null;
+
+    currentStationId = null;
+
+  }
+
+  setStatus(index,false);
+
+}
+
+
+function setStatus(index,isOnline){
+
+  const status =
+    document.getElementById("status-"+index);
+
+  if(!status) return;
+
+
+  if(isOnline){
+
+    status.textContent = "ONLINE";
+
+    status.className =
+      "status online";
+
+  }else{
+
+    status.textContent = "OFFLINE";
+
+    status.className =
+      "status offline";
+
+  }
+
+
+  updateStats();
+
+}
+
+
+function deleteStation(index){
+
+  const station = stations[index];
+
+  if(!confirm(
+    "Delete " + station.name + "?"
+  )) return;
+
+
+  if(currentStationId === index){
+
+    stopStation(index);
+
+  }
+
+
+  stations.splice(index,1);
+
+  saveStations();
+
+  renderStations();
+
+}
+
+
+function showForm(){
+
+  document
+    .getElementById("addSection")
+    .classList.remove("hidden");
+
+  document
+    .getElementById("addSection")
+    .scrollIntoView({
+      behavior:"smooth"
+    });
+
+}
+
+
+function hideForm(){
+
+  document
+    .getElementById("addSection")
+    .classList.add("hidden");
+
+}
+
+
+document
+  .getElementById("stationForm")
+  .addEventListener(
+    "submit",
+    function(event){
+
+      event.preventDefault();
+
+
+      const station = {
+
+        name:
+          document.getElementById("name").value.trim(),
+
+        url:
+          document.getElementById("url").value.trim(),
+
+        country:
+          document.getElementById("country").value.trim(),
+
+        language:
+          document.getElementById("language").value.trim(),
+
+        format:
+          document.getElementById("format").value
+
+      };
+
+
+      stations.push(station);
+
+      saveStations();
+
+      renderStations();
+
+      this.reset();
+
+      hideForm();
+
+    }
+  );
+
+
+function updateStats(){
+
+  document
+    .getElementById("stationCount")
+    .textContent =
+      stations.length;
+
+
+  let online = 0;
+
+  stations.forEach((station,index)=>{
+
+    const status =
+      document.getElementById(
+        "status-"+index
+      );
+
+    if(status &&
+       status.classList.contains("online")){
+
+      online++;
+
+    }
+
+  });
+
+
+  document
+    .getElementById("onlineCount")
+    .textContent =
+      online;
+
+
+  /*
+    Real listener counting will be connected
+    to the backend later.
+  */
+
+  document
+    .getElementById("listenerCount")
+    .textContent =
+      "0";
+
+}
+
 
 renderStations();
 
