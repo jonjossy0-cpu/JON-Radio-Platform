@@ -4,13 +4,15 @@ const path = require("path");
 const fs = require("fs");
 
 const autoDJ = require("./radio/autodj");
+const stream = require("./radio/stream");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // =====================================
 // JON RADIO PLATFORM
-// BACKEND SERVER
+// JON FM ETHIOPIA
+// MAIN SERVER
 // =====================================
 
 app.use(express.json());
@@ -27,7 +29,7 @@ if (!fs.existsSync(MUSIC_DIR)) {
 }
 
 // =====================================
-// MUSIC STORAGE
+// MUSIC UPLOAD
 // =====================================
 
 const storage = multer.diskStorage({
@@ -63,23 +65,22 @@ const upload = multer({
 });
 
 // =====================================
-// STATIC MUSIC
+// MUSIC FILES
 // =====================================
 
 app.use("/music", express.static(MUSIC_DIR));
 
 // =====================================
-// RADIO STATUS
+// STATION
 // =====================================
 
-let listeners = 0;
-
-let station = {
+const station = {
   name: "JON FM ETHIOPIA",
   format: "MP3",
-  bitrate: "128 kbps",
-  online: false
+  bitrate: "128 kbps"
 };
+
+let listeners = 0;
 
 // =====================================
 // HOME
@@ -90,27 +91,37 @@ app.get("/", (req, res) => {
     platform: "JON RADIO PLATFORM",
     station: station.name,
     status: "ONLINE",
-    message: "JON Radio Backend is running."
+    message: "JON Radio Platform Backend is running."
   });
 });
 
 // =====================================
-// FULL STATUS
+// STATUS
 // =====================================
 
 app.get("/api/status", (req, res) => {
 
   const dj = autoDJ.getStatus();
+  const streamStatus = stream.getStatus();
 
   res.json({
     station: station.name,
-    online: station.online,
-    listeners: listeners,
+
+    online:
+      dj.autoDJ ||
+      dj.live ||
+      streamStatus.running,
+
+    listeners,
 
     live: dj.live,
+
     autoDJ: dj.autoDJ,
 
+    stream: streamStatus.running,
+
     nowPlaying: dj.nowPlaying,
+
     nextSong: dj.nextSong,
 
     musicCount: dj.musicCount
@@ -129,20 +140,31 @@ app.get("/api/music", (req, res) => {
 
     const music = files
       .filter(file => {
-        const ext = path.extname(file).toLowerCase();
 
-        return ext === ".mp3" || ext === ".wav";
+        const ext =
+          path.extname(file).toLowerCase();
+
+        return (
+          ext === ".mp3" ||
+          ext === ".wav"
+        );
+
       })
       .map(file => {
 
-        const filePath = path.join(MUSIC_DIR, file);
-        const stats = fs.statSync(filePath);
+        const filePath =
+          path.join(MUSIC_DIR, file);
+
+        const info =
+          fs.statSync(filePath);
 
         return {
           name: file,
-          size: stats.size,
-          url: `/music/${encodeURIComponent(file)}`
+          size: info.size,
+          url:
+            `/music/${encodeURIComponent(file)}`
         };
+
       });
 
     res.json(music);
@@ -177,11 +199,13 @@ app.post(
 
       success: true,
 
-      message: "Music uploaded successfully.",
+      message:
+        "Music uploaded successfully.",
 
       file: {
         name: req.file.filename,
-        originalName: req.file.originalname,
+        originalName:
+          req.file.originalname,
         size: req.file.size,
         url:
           `/music/${encodeURIComponent(
@@ -234,25 +258,35 @@ app.post(
   "/api/autodj/start",
   (req, res) => {
 
-    const success =
-      autoDJ.startAutoDJ();
-
-    if (!success) {
+    if (autoDJ.getStatus().live) {
 
       return res.status(409).json({
         success: false,
         error:
-          "Auto DJ cannot start while Live is active."
+          "Live broadcast is active."
       });
 
     }
 
-    station.online = true;
+    const started =
+      autoDJ.startAutoDJ();
+
+    if (!started) {
+
+      return res.status(409).json({
+        success: false,
+        error:
+          "Auto DJ could not start."
+      });
+
+    }
 
     res.json({
       success: true,
-      message: "JON FM Auto DJ started.",
-      status: autoDJ.getStatus()
+      message:
+        "JON FM Auto DJ started.",
+      status:
+        autoDJ.getStatus()
     });
 
   }
@@ -268,12 +302,12 @@ app.post(
 
     autoDJ.stopAutoDJ();
 
-    station.online = false;
-
     res.json({
       success: true,
-      message: "JON FM Auto DJ stopped.",
-      status: autoDJ.getStatus()
+      message:
+        "JON FM Auto DJ stopped.",
+      status:
+        autoDJ.getStatus()
     });
 
   }
@@ -289,13 +323,12 @@ app.post(
 
     autoDJ.startLive();
 
-    station.online = true;
-
     res.json({
       success: true,
       message:
-        "Live broadcast started. Auto DJ paused.",
-      status: autoDJ.getStatus()
+        "Live mode started. Auto DJ paused.",
+      status:
+        autoDJ.getStatus()
     });
 
   }
@@ -311,20 +344,74 @@ app.post(
 
     autoDJ.stopLive();
 
-    station.online = true;
-
     res.json({
       success: true,
       message:
-        "Live broadcast stopped. Auto DJ can resume.",
-      status: autoDJ.getStatus()
+        "Live mode stopped.",
+      status:
+        autoDJ.getStatus()
     });
 
   }
 );
 
 // =====================================
-// LISTENER COUNT
+// STREAM START
+// =====================================
+
+app.post(
+  "/api/stream/start",
+  (req, res) => {
+
+    const input =
+      req.body.input;
+
+    if (!input) {
+
+      return res.status(400).json({
+        success: false,
+        error:
+          "Stream input is required."
+      });
+
+    }
+
+    stream.startStream(input);
+
+    res.json({
+      success: true,
+      message:
+        "JON FM stream engine started.",
+      status:
+        stream.getStatus()
+    });
+
+  }
+);
+
+// =====================================
+// STREAM STOP
+// =====================================
+
+app.post(
+  "/api/stream/stop",
+  (req, res) => {
+
+    stream.stopStream();
+
+    res.json({
+      success: true,
+      message:
+        "JON FM stream stopped.",
+      status:
+        stream.getStatus()
+    });
+
+  }
+);
+
+// =====================================
+// LISTENERS
 // =====================================
 
 app.post(
@@ -335,10 +422,11 @@ app.post(
       Number(req.body.count);
 
     if (
-      !Number.isNaN(count) &&
+      Number.isFinite(count) &&
       count >= 0
     ) {
-      listeners = Math.floor(count);
+      listeners =
+        Math.floor(count);
     }
 
     res.json({
@@ -350,7 +438,7 @@ app.post(
 );
 
 // =====================================
-// STATION INFORMATION
+// STATION INFO
 // =====================================
 
 app.get(
@@ -358,11 +446,11 @@ app.get(
   (req, res) => {
 
     res.json({
-      name: station.name,
-      format: station.format,
-      bitrate: station.bitrate,
-      online: station.online,
-      status: autoDJ.getStatus()
+      ...station,
+      status:
+        autoDJ.getStatus(),
+      stream:
+        stream.getStatus()
     });
 
   }
@@ -380,7 +468,8 @@ app.use(
     res.status(500).json({
       success: false,
       error:
-        err.message || "Server error."
+        err.message ||
+        "Server error."
     });
 
   }
@@ -394,13 +483,24 @@ app.listen(PORT, () => {
 
   console.log("");
   console.log("================================");
-  console.log("     JON RADIO PLATFORM");
-  console.log("     JON FM ETHIOPIA");
+  console.log("      JON RADIO PLATFORM");
+  console.log("      JON FM ETHIOPIA");
   console.log("================================");
-  console.log(`Server running on port ${PORT}`);
-  console.log("Auto DJ Engine: READY");
-  console.log("Music Upload: READY");
-  console.log("Live Control: READY");
+  console.log(
+    `Server running on port ${PORT}`
+  );
+  console.log(
+    "Auto DJ Engine: READY"
+  );
+  console.log(
+    "Stream Engine: READY"
+  );
+  console.log(
+    "Music Upload: READY"
+  );
+  console.log(
+    "Live Control: READY"
+  );
   console.log("================================");
   console.log("");
 
