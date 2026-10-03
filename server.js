@@ -411,6 +411,32 @@ app.post(
 );
 
 // =====================================
+// JON FM PUBLIC AUDIO STREAM
+// =====================================
+
+app.get("/jonfm", (req, res) => {
+  res.setHeader("Content-Type", "audio/mpeg");
+  res.setHeader(
+    "Cache-Control",
+    "no-cache, no-store, must-revalidate"
+  );
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  res.flushHeaders();
+
+  stream.addClient(res);
+
+  req.on("close", () => {
+    try {
+      res.end();
+    } catch (error) {
+      // Client already disconnected
+    }
+  });
+});
+
+// =====================================
 // LISTENERS
 // =====================================
 
