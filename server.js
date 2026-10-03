@@ -76,7 +76,7 @@ const upload = multer({
     ];
 
     const ext = path.extname(file.originalname).toLowerCase();
-    if (allowed.includes(file.mimetype) || ext === ".mp3" || ext === ".wav") {
+    if (allowed.includes(file.mimetype) || ext === ".mp3" || ext === ".wav" || ext === ".m4a") {
       cb(null, true);
     } else {
       cb(new Error("Only MP3 and WAV files are allowed."));
@@ -204,7 +204,8 @@ app.get("/api/music", (req, res) => {
 
         return (
           ext === ".mp3" ||
-          ext === ".wav"
+          ext === ".wav" ||
+          ext === ".m4a"
         );
 
       })
