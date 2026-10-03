@@ -76,7 +76,7 @@ const upload = multer({
     ];
 
     const ext = path.extname(file.originalname).toLowerCase();
-    if (allowed.includes(file.mimetype) || ext === ".mp3" || ext === ".wav" || ext === ".m4a") {
+    if (allowed.includes(file.mimetype) || ext === ".mp3" || ext === ".wav" || ext === ".m4a" || ext === ".m4a") {
       cb(null, true);
     } else {
       cb(new Error("Only MP3 and WAV files are allowed."));
