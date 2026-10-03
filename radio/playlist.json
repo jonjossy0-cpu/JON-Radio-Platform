@@ -1,0 +1,9 @@
+{
+  "station": "JON FM ETHIOPIA",
+  "format": "MP3",
+  "bitrate": 128,
+  "autoDJ": true,
+  "shuffle": false,
+  "repeat": true,
+  "songs": []
+}
