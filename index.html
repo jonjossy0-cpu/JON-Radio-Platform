@@ -1621,41 +1621,81 @@ function removePlaylist(index){
    AUTO DJ
 ===================================================== */
 
-function toggleAutoDJ(){
+async function toggleAutoDJ(){
 
   if(autoDJ){
-
-    stopAutoDJ();
-
+    await stopAutoDJ();
     return;
-
   }
-
 
   if(liveMode){
-
-    alert(
-      "Live microphone is active. Stop Live first."
-    );
-
+    alert("Live microphone is active. Stop Live first.");
     return;
-
   }
 
+  try{
+    const response = await fetch(
+      BACKEND_URL + "/api/autodj/start",
+      {method:"POST"}
+    );
+    const result = await response.json();
 
-  autoDJ = true;
+    if(!response.ok || !result.success){
+      throw new Error(result.error || "Auto DJ could not start.");
+    }
 
-  updateBroadcastUI();
+    autoDJ = true;
+    updateBroadcastUI();
+    await refreshBackendStatus();
 
+  }catch(error){
+    alert("Auto DJ could not start. Upload at least one MP3/WAV file and check the backend.");
+  }
 }
 
 
-function stopAutoDJ(){
+async function stopAutoDJ(){
+
+  try{
+    const response = await fetch(
+      BACKEND_URL + "/api/autodj/stop",
+      {method:"POST"}
+    );
+    const result = await response.json();
+
+    if(!response.ok || !result.success){
+      throw new Error(result.error || "Auto DJ could not stop.");
+    }
+
+  }catch(error){
+    console.log("JON AUTO DJ STOP:", error.message);
+  }
 
   autoDJ = false;
-
   updateBroadcastUI();
+}
 
+
+async function refreshBackendStatus(){
+
+  try{
+    const response = await fetch(
+      BACKEND_URL + "/api/status",
+      {cache:"no-store"}
+    );
+
+    if(!response.ok) return;
+
+    const status = await response.json();
+
+    autoDJ = !!status.autoDJ;
+    liveMode = !!status.live;
+
+    updateBroadcastUI();
+
+  }catch(error){
+    console.log("JON STATUS:", error.message);
+  }
 }
 
 
@@ -2003,6 +2043,9 @@ if(stations.length === 0){
 /* =====================================================
    INITIALIZE
 ===================================================== */
+
+loadServerMusic();
+refreshBackendStatus();
 
 renderStations();
 
