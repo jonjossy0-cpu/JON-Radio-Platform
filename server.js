@@ -63,6 +63,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024
+  },
 
   fileFilter: (req, file, cb) => {
     const allowed = [
@@ -72,7 +75,8 @@ const upload = multer({
       "audio/wave"
     ];
 
-    if (allowed.includes(file.mimetype)) {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(file.mimetype) || ext === ".mp3" || ext === ".wav") {
       cb(null, true);
     } else {
       cb(new Error("Only MP3 and WAV files are allowed."));
