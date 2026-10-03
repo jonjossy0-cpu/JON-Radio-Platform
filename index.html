@@ -1653,7 +1653,7 @@ async function toggleAutoDJ(){
     await refreshBackendStatus();
 
   }catch(error){
-    alert("Auto DJ could not start. Upload at least one MP3/WAV file and check the backend.");
+    alert("Auto DJ could not start: " + (error.message || "Check the backend connection."));
   }
 }
 
