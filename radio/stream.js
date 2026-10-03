@@ -121,6 +121,23 @@ function addClient(res) {
   });
 }
 
+
+// =====================================
+// BROADCAST AUDIO
+// =====================================
+
+function broadcastAudio(chunk) {
+  for (const client of clients) {
+    try {
+      if (!client.writableEnded) {
+        client.write(chunk);
+      }
+    } catch (error) {
+      clients.delete(client);
+    }
+  }
+}
+
 // =====================================
 // STOP STREAM
 // =====================================
@@ -160,5 +177,6 @@ module.exports = {
   startStream,
   stopStream,
   addClient,
+  broadcastAudio,
   getStatus
 };
