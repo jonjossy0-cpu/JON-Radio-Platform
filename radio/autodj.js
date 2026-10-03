@@ -17,7 +17,7 @@ function getMusicFiles() {
   if (!fs.existsSync(MUSIC_DIR)) return [];
   return fs.readdirSync(MUSIC_DIR).filter(file => {
     const ext = path.extname(file).toLowerCase();
-    return ext === ".mp3" || ext === ".wav";
+    return ext === ".mp3" || ext === ".wav" || ext === ".m4a";
   });
 }
 
