@@ -1,4 +1,9 @@
 const { spawn } = require("child_process");
+let FFMPEG_PATH = "ffmpeg";
+try {
+  const ffmpegStatic = require("ffmpeg-static");
+  if (ffmpegStatic) FFMPEG_PATH = ffmpegStatic;
+} catch {}
 
 const clients = new Set();
 
@@ -18,7 +23,7 @@ function writeToListeners(chunk) {
 
 function startStream(input) {
   if (streamRunning || broadcastSource || !input) return false;
-  ffmpegProcess = spawn("ffmpeg", [
+  ffmpegProcess = spawn(FFMPEG_PATH, [
     "-re","-i",input,"-vn","-ac","2","-ar","44100",
     "-b:a","128k","-f","mp3","pipe:1"
   ]);
