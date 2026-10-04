@@ -514,7 +514,7 @@ body.authenticated #lockButton{display:inline-block !important;}
     <div class="login-logo">🔐</div>
     <h2 id="loginTitle">JON RADIO PLATFORM</h2>
     <p>Admin Login</p>
-    <form id="loginForm" onsubmit="return loginAdmin(event)">
+    <form id="loginForm">
       <label for="adminPassword">Password</label>
       <input id="adminPassword" type="password" autocomplete="current-password" required
              style="width:100%;padding:12px;border:1px solid #d0d5dd;border-radius:9px;margin:8px 0;">
@@ -950,6 +950,7 @@ body.authenticated #lockButton{display:inline-block !important;}
    ADMIN AUTHENTICATION
 ===================================================== */
 
+const BACKEND_URL = window.JON_RADIO_BACKEND || "https://jon-radio-platform.onrender.com";
 const AUTH_TOKEN_KEY = "jonRadioAdminSession";
 const DASHBOARD_LOCK_KEY = "jonRadioDashboardLocked";
 let authToken = sessionStorage.getItem(AUTH_TOKEN_KEY) || "";
@@ -979,8 +980,13 @@ function setLoginError(message){
 }
 
 async function loginAdmin(event){
-  event.preventDefault();
-  const password = document.getElementById("adminPassword").value;
+  if(event) event.preventDefault();
+  const passwordInput = document.getElementById("adminPassword");
+  const password = passwordInput ? passwordInput.value : "";
+  if(!passwordInput){
+    setLoginError("Login form error. Please refresh the page.");
+    return false;
+  }
   setLoginError("");
   const button = document.getElementById("loginButton");
   if(button) button.disabled = true;
@@ -1014,6 +1020,7 @@ async function loginAdmin(event){
     localStorage.removeItem(DASHBOARD_LOCK_KEY);
     document.getElementById("adminPassword").value = "";
     document.body.classList.add("authenticated");
+    document.body.classList.remove("dashboard-locked");
     setLoginError("");
 
     try{
@@ -1031,6 +1038,12 @@ async function loginAdmin(event){
   }finally{
     if(button) button.disabled = false;
   }
+  return false;
+}
+
+const loginForm = document.getElementById("loginForm");
+if(loginForm){
+  loginForm.addEventListener("submit", loginAdmin);
 }
 
 function logoutAdmin(showLogin = true){
@@ -1165,7 +1178,6 @@ let liveMode = false;
 let microphoneStream = null;
 let microphoneRecorder = null;
 let liveSocket = null;
-const BACKEND_URL = window.JON_RADIO_BACKEND || "https://jon-radio-platform.onrender.com";
 function websocketUrl(path){ const base=BACKEND_URL.replace(/\/$/,""); const url=new URL(base+path); url.protocol=url.protocol==="https:"?"wss:":"ws:"; return url.toString(); }
 
 
