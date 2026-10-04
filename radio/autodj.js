@@ -239,11 +239,27 @@ function advance() {
 }
 
 function next() {
-  if (!autoDJRunning || liveMode) return false;
+  if (!autoDJRunning || liveMode || paused) return false;
+  if (!loadPlaylist()) return false;
+
+  // Explicit Next must skip the current item immediately.
+  // It bypasses Repeat/Ad timing for this manual action.
   terminateCurrent();
-  currentItem = null;
+
+  const nextItem = getNextSong();
+  if (!nextItem) return false;
+
+  previousSong = nowPlaying;
+  currentItem = nextItem;
   currentOffset = 0;
-  advance();
+  nowPlaying = nextItem.name;
+
+  const transition = getTransitionItem();
+  updateNext(transition);
+  addHistory(nextItem.name);
+
+  const myGeneration = generation;
+  playPair(nextItem, transition, myGeneration);
   return true;
 }
 
