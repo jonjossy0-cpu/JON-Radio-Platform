@@ -16,4 +16,4 @@ jobs:
       - run: node --check radio/broadcast.js
       - run: node --check radio/autodj.js
       - run: node --check radio/live.js
-      - run: node -e "const fs=require('fs');const h=fs.readFileSync('index.html','utf8');if(!h.includes('<!doctype html>')||!h.includes('JON FM ETHIOPIA'))process.exit(1);console.log('HTML basic validation OK')"
+      - run: node -e "const fs=require('fs');const h=fs.readFileSync('index.html','utf8');if(!h.includes('<!doctype html>')||!h.includes('JON FM ETHIOPIA'))process.exit(1);if(h.includes('\\\\n'))process.exit(1);if(!h.includes('async function api('))process.exit(1);if(!h.includes('/api/autodj/play'))process.exit(1);if(!h.includes('/api/autodj/jingle/settings'))process.exit(1);console.log('HTML basic validation OK')"
