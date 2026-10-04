@@ -3,6 +3,14 @@ const path = require("path");
 const { spawn } = require("child_process");
 const stream = require("./stream");
 
+let FFMPEG_PATH = "ffmpeg";
+try {
+  const ffmpegStatic = require("ffmpeg-static");
+  if (ffmpegStatic) FFMPEG_PATH = ffmpegStatic;
+} catch {
+  // Fall back to a system ffmpeg when ffmpeg-static is not installed.
+}
+
 const MUSIC_DIR = path.join(__dirname, "..", "music");
 const ADS_DIR = path.join(__dirname, "..", "ads");
 const JINGLES_DIR = path.join(__dirname, "..", "jingles");
@@ -31,6 +39,7 @@ let playHistory = [];
 let queue = [];
 let generation = 0;
 let gainDb = 0;
+let configuredPlaylist = null;
 
 function audioFiles(dir) {
   if (!fs.existsSync(dir)) return [];
@@ -54,7 +63,12 @@ function loadPlaylist() {
   ensureDirs();
   const files = getMusicFiles();
   if (!files.length) return false;
-  playlist = files;
+  if (Array.isArray(configuredPlaylist)) {
+    playlist = configuredPlaylist.filter(file => files.includes(file));
+    if (!playlist.length) playlist = files;
+  } else {
+    playlist = files;
+  }
   if (currentIndex >= playlist.length) currentIndex = 0;
   return true;
 }
@@ -158,7 +172,7 @@ function spawnSingle(item, offset, myGeneration) {
     "-b:a", "128k", "-f", "mp3", "pipe:1"
   ];
 
-  currentProcess = spawn("ffmpeg", args);
+  currentProcess = spawn(FFMPEG_PATH, args);
   currentProcess.stdout.on("data", chunk => stream.broadcastAudio(chunk));
   currentProcess.stderr.on("data", data => console.error("JON AUTO DJ FFmpeg:", data.toString().trim()));
 
@@ -184,7 +198,7 @@ function spawnCrossfade(first, second, fade, myGeneration) {
     "-map", "[aout]", "-b:a", "128k", "-f", "mp3", "pipe:1"
   ];
 
-  currentProcess = spawn("ffmpeg", args);
+  currentProcess = spawn(FFMPEG_PATH, args);
   currentProcess.stdout.on("data", chunk => stream.broadcastAudio(chunk));
   currentProcess.stderr.on("data", data => console.error("JON AUTO DJ FFmpeg:", data.toString().trim()));
 
@@ -279,6 +293,55 @@ function enqueue(song) {
   if (!song || !playlist.includes(song)) return false;
   queue.push(song);
   updateNext({ name: queue[0] });
+  return true;
+}
+
+function setPlaylist(items) {
+  if (!Array.isArray(items)) return false;
+  const files = getMusicFiles();
+  const valid = [...new Set(items.map(v => path.basename(String(v))).filter(v => files.includes(v)))];
+  configuredPlaylist = valid;
+  playlist = valid.length ? valid : files;
+  if (currentIndex >= playlist.length) currentIndex = 0;
+  updateNext(nextSong ? { name: nextSong } : null);
+  return true;
+}
+
+function getPlaylist() {
+  return playlist.slice();
+}
+
+function removeMusic(filename) {
+  const name = path.basename(String(filename));
+  configuredPlaylist = Array.isArray(configuredPlaylist)
+    ? configuredPlaylist.filter(item => item !== name)
+    : configuredPlaylist;
+  queue = queue.filter(item => item !== name);
+  const wasCurrent = currentItem && currentItem.name === name;
+  if (wasCurrent) {
+    terminateCurrent();
+    currentItem = null;
+    currentOffset = 0;
+    nowPlaying = null;
+    nextSong = null;
+    if (autoDJRunning && !liveMode && !paused) setTimeout(advance, 100);
+  }
+  playlist = playlist.filter(item => item !== name);
+  if (currentIndex >= playlist.length) currentIndex = 0;
+  return true;
+}
+
+function playPromotion() {
+  if (!autoDJRunning || liveMode || paused) return false;
+  const ad = getTimedAd();
+  if (!ad) return false;
+  terminateCurrent();
+  currentItem = null;
+  currentOffset = 0;
+  nowPlaying = ad.name;
+  nextSong = null;
+  const myGeneration = generation;
+  spawnSingle(ad, 0, myGeneration);
   return true;
 }
 
@@ -400,7 +463,8 @@ function getStatus() {
     gainDb,
     adCount: getAdFiles().length,
     jingleCount: getJingleFiles().length,
-    history: playHistory.slice(0, 20)
+    history: playHistory.slice(0, 20),
+    playlist: playlist.slice()
   };
 }
 
@@ -409,5 +473,5 @@ module.exports = {
   loadPlaylist, getMusicFiles, getAdFiles, getJingleFiles,
   next, previous, enqueue, clearQueue,
   setShuffle, setRepeat, setCrossfade, setAdInterval, setAdTimes, setGain,
-  pause, resume
+  pause, resume, setPlaylist, getPlaylist, removeMusic, playPromotion
 };
