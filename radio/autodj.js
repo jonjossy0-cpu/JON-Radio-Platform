@@ -431,6 +431,9 @@ function startLive() {
   if (liveMode) return true;
   liveMode = true;
   terminateCurrent();
+  // Release the Auto DJ stream source while keeping Auto DJ enabled.
+  // This lets the live microphone take exclusive broadcast priority.
+  stream.stopAutoDJBroadcast();
   return true;
 }
 
@@ -440,6 +443,8 @@ function stopLive() {
     paused = false;
     currentItem = null;
     currentOffset = 0;
+    // Reclaim the broadcast source before Auto DJ resumes.
+    stream.startAutoDJBroadcast();
     setTimeout(advance, 300);
   }
   return true;
