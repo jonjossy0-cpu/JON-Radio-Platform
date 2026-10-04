@@ -16,6 +16,7 @@ const PORT = process.env.PORT || 3000;
 // JON RADIO PLATFORM
 // JON FM ETHIOPIA
 // MAIN SERVER
+// Render redeploy marker: 2026-10-04 — Auto DJ API/routes current
 // =====================================
 
 app.use(express.json());
