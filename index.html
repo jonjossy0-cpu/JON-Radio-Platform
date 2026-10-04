@@ -393,16 +393,7 @@ footer{
 
 
 /* ADMIN LOGIN */
-#loginGate{
-  position:fixed;
-  inset:0;
-  z-index:9999;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-  background:#f4f7fb;
-}
+#loginGate{display:none !important;}
 .login-card{
   width:min(390px,100%);
   background:#fff;
@@ -424,7 +415,7 @@ footer{
   margin-top:10px;
   font-size:13px;
 }
-body.authenticated #loginGate{display:none;}
+body.authenticated #loginGate{display:none !important;}
 body.authenticated #logoutButton{display:inline-block !important;}
 
 /* MOBILE */
@@ -502,27 +493,12 @@ body.dashboard-locked header,body.dashboard-locked .container,body.dashboard-loc
 body.dashboard-locked #dashboardLock{pointer-events:auto}
 
 body.authenticated #lockButton{display:inline-block !important;}
-body.dashboard-locked #loginGate{display:none;}
-body.dashboard-locked #loginGate{display:none;}
+body.dashboard-locked #loginGate{display:none !important;}
+body.dashboard-locked #loginGate{display:none !important;}
 </style>
 </head>
 
-<body>
-
-<div id="loginGate">
-  <div class="login-card">
-    <div class="login-logo">🔐</div>
-    <h2>JON RADIO PLATFORM</h2>
-    <p>Admin Login</p>
-    <form id="loginForm" novalidate>
-      <label for="adminPassword">Password</label>
-      <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Enter admin password" required>
-      <button id="loginButton" class="primary" type="submit">LOGIN</button>
-      <div id="loginError" class="login-error hidden"></div>
-    </form>
-  </div>
-</div>
-
+<body class="authenticated">
 
 <div id="dashboardLock">
   <div class="lock-card">
@@ -1112,9 +1088,6 @@ async function checkAdminSession(){
 }
 
 
-
-
-document.getElementById("loginForm").addEventListener("submit", loginAdmin);
 
 
 /* =====================================================
