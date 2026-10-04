@@ -1038,15 +1038,22 @@ async async function checkAdminSession(){
   }
   if(!authToken) return;
 
+  const tokenAtCheck = authToken;
+
   try{
     const response = await nativeFetch(
       BACKEND_URL + "/api/auth/check",
       {
         headers:{
-          "Authorization":"Bearer " + authToken
-        }
+          "Authorization":"Bearer " + tokenAtCheck
+        },
+        cache:"no-store"
       }
     );
+
+    // Do not clear a newly-created login session because an older
+    // session check finished after the user logged in.
+    if(authToken !== tokenAtCheck) return;
 
     if(!response.ok){
       logoutAdmin(false);
@@ -1055,7 +1062,10 @@ async async function checkAdminSession(){
 
     document.body.classList.add("authenticated");
   }catch(error){
-    logoutAdmin(false);
+    // The same race protection applies to failed network checks.
+    if(authToken === tokenAtCheck){
+      logoutAdmin(false);
+    }
   }
 }
 
