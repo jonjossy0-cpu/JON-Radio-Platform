@@ -1029,7 +1029,7 @@ function logoutAdmin(showLogin = true){
   }
 }
 
-async function checkAdminSession(){
+async async function checkAdminSession(){
   if(localStorage.getItem(DASHBOARD_LOCK_KEY) === "1"){
     authToken = "";
     sessionStorage.removeItem(AUTH_TOKEN_KEY);
