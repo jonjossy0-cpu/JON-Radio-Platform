@@ -1,6 +1,6 @@
 const{spawn}=require("child_process");const fs=require("fs"),path=require("path");const broadcast=require("./broadcast");
 const MUSIC=path.join(__dirname,"..","music"),ADS=path.join(__dirname,"..","ads"),JINGLES=path.join(__dirname,"..","jingles");let FFMPEG_PATH="ffmpeg";try{FFMPEG_PATH=require("ffmpeg-static")||FFMPEG_PATH}catch{}
-let running=false,paused=false,live=false,wasRunningBeforeLive=false,proc=null,playlist=[],queue=[],index=0,shuffle=false,repeat=false,crossfade=0,gain=0,adInterval=0,lastAd=0,adTimes=[],jingleInterval=0,lastJingle=0;let now=null,next=null,previous=null,generation=0;
+let running=false,paused=false,live=false,wasRunningBeforeLive=false,proc=null,playlist=[],queue=[],index=0,shuffle=false,repeat=false,crossfade=1,gain=0,adInterval=0,lastAd=0,adTimes=[],jingleInterval=0,lastJingle=0;let now=null,next=null,previous=null,generation=0;
 
 const audioExt=[".mp3",".wav",".m4a"];
 function files(dir=MUSIC){try{return fs.readdirSync(dir).filter(x=>audioExt.includes(path.extname(x).toLowerCase()))}catch{return[]}}
