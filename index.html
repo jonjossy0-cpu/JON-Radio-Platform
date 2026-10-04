@@ -1041,10 +1041,6 @@ async function loginAdmin(event){
   return false;
 }
 
-const loginForm = document.getElementById("loginForm");
-if(loginForm){
-  loginForm.addEventListener("submit", loginAdmin);
-}
 
 function logoutAdmin(showLogin = true){
   authToken = "";
