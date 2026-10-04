@@ -318,6 +318,15 @@ server.on("upgrade", (req, socket, head) => {
     return;
   }
 
+  // The microphone WebSocket bypasses Express middleware, so authenticate
+  // the session explicitly during the WebSocket upgrade.
+  const token = String(url.searchParams.get("token") || "");
+  if (!verifySession(token)) {
+    socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
+    socket.destroy();
+    return;
+  }
+
   liveWSS.handleUpgrade(req, socket, head, ws => {
     liveWSS.emit("connection", ws, req);
   });
