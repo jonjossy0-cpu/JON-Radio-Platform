@@ -979,42 +979,93 @@ function setLoginError(message){
 
 async function loginAdmin(event){
   event.preventDefault();
-  const password = document.getElementById("adminPassword").value;
+
+  const passwordInput = document.getElementById("adminPassword");
+  const loginButton = document.querySelector("#loginForm button[type='submit']");
+  const password = passwordInput ? passwordInput.value : "";
+
   setLoginError("");
+
+  if(!password){
+    setLoginError("Please enter the admin password.");
+    return;
+  }
+
+  if(loginButton){
+    loginButton.disabled = true;
+    loginButton.textContent = "Logging in...";
+  }
 
   try{
     const response = await nativeFetch(
       BACKEND_URL + "/api/auth/login",
       {
         method:"POST",
-        headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},
-        body:new URLSearchParams({password})
+        headers:{
+          "Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"
+        },
+        body:new URLSearchParams({password}),
+        cache:"no-store"
       }
     );
 
-    const result = await response.json();
+    const text = await response.text();
+    let result = null;
 
-    if(!response.ok || !result.success){
-      throw new Error(result.error || "Login failed.");
+    try{
+      result = text ? JSON.parse(text) : null;
+    }catch{
+      throw new Error(
+        "Login server returned HTTP " + response.status + " instead of JSON."
+      );
     }
 
+    if(!response.ok || !result || !result.success){
+      throw new Error(
+        (result && result.error) || "Login failed. Please check the password and server connection."
+      );
+    }
+
+    if(!result.token){
+      throw new Error("Login succeeded, but the server did not return a session.");
+    }
+
+    // Establish the session FIRST. Dashboard loading must never turn
+    // a successful login into a silent failure.
     authToken = result.token;
     sessionStorage.setItem(AUTH_TOKEN_KEY, authToken);
     localStorage.removeItem(DASHBOARD_LOCK_KEY);
-    document.getElementById("adminPassword").value = "";
+    document.body.classList.remove("dashboard-locked");
     document.body.classList.add("authenticated");
+
+    if(passwordInput) passwordInput.value = "";
     setLoginError("");
 
-    await Promise.all([
-      loadServerMusic(),
-      refreshBackendStatus()
-    ]);
-    renderStations();
-    renderMusic();
-    renderPlaylist();
-    updateBroadcastUI();
+    // Refresh dashboard data separately; a data/API problem must not
+    // undo a valid login session.
+    try{
+      await Promise.all([
+        loadServerMusic(),
+        refreshBackendStatus()
+      ]);
+      renderStations();
+      renderMusic();
+      renderPlaylist();
+      updateBroadcastUI();
+      await loadDJMedia();
+    }catch(loadError){
+      console.warn("Dashboard data refresh after login failed:", loadError);
+    }
+
   }catch(error){
-    setLoginError(error.message || "Login failed.");
+    // Keep the login screen visible and show the actual reason.
+    document.body.classList.remove("authenticated");
+    setLoginError(error && error.message ? error.message : "Login failed. Please try again.");
+  }finally{
+    if(loginButton){
+      loginButton.disabled = false;
+      loginButton.textContent = "LOGIN";
+    }
   }
 }
 function logoutAdmin(showLogin = true){
