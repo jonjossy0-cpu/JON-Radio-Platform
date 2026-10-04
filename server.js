@@ -102,21 +102,8 @@ function clientIp(req) {
 }
 
 function requireAdmin(req, res, next) {
-  // Update metadata is public so JON Stream can check for new versions.
-  if (req.path === "/jon-stream-update") return next();
-
-  const auth = req.headers.authorization || "";
-  const token = auth.startsWith("Bearer ")
-    ? auth.slice(7).trim()
-    : "";
-
-  if (!verifySession(token)) {
-    return res.status(401).json({
-      success: false,
-      error: "Admin login required."
-    });
-  }
-
+  // Admin login has been removed from the dashboard.
+  // Keep this middleware name so existing route wiring remains compatible.
   next();
 }
 
