@@ -391,6 +391,42 @@ footer{
   padding:25px;
 }
 
+
+/* ADMIN LOGIN */
+#loginGate{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:#f4f7fb;
+}
+.login-card{
+  width:min(390px,100%);
+  background:#fff;
+  border-radius:18px;
+  padding:28px;
+  box-shadow:0 8px 30px rgba(0,0,0,.12);
+  text-align:center;
+}
+.login-logo{font-size:42px;margin-bottom:8px;}
+.login-card h2{font-size:22px;color:#0b63ce;}
+.login-card>p{color:#667085;margin:6px 0 22px;}
+.login-card form{text-align:left;}
+.login-card form button{width:100%;margin-top:8px;}
+.login-error{
+  color:#b91c1c;
+  background:#fee2e2;
+  padding:10px;
+  border-radius:9px;
+  margin-top:10px;
+  font-size:13px;
+}
+body.authenticated #loginGate{display:none;}
+body.authenticated #logoutButton{display:inline-block !important;}
+
 /* MOBILE */
 
 @media(max-width:900px){
@@ -457,9 +493,24 @@ footer{
 
 <body>
 
+<div id="loginGate">
+  <div class="login-card">
+    <div class="login-logo">🔐</div>
+    <h2>JON RADIO PLATFORM</h2>
+    <p>Admin Login</p>
+    <form id="loginForm">
+      <label for="adminPassword">Password</label>
+      <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Enter admin password" required>
+      <button class="primary" type="submit">LOGIN</button>
+      <div id="loginError" class="login-error hidden"></div>
+    </form>
+  </div>
+</div>
+
 <header>
   <h1>JON RADIO PLATFORM</h1>
   <p>Multi-Radio Management & 24/7 Broadcasting Platform</p>
+  <button id="logoutButton" class="dark hidden" onclick="logoutAdmin()">Logout</button>
 </header>
 
 
@@ -850,6 +901,114 @@ footer{
 
 
 <script>
+
+
+/* =====================================================
+   ADMIN AUTHENTICATION
+===================================================== */
+
+const AUTH_TOKEN_KEY = "jonRadioAdminSession";
+let authToken = sessionStorage.getItem(AUTH_TOKEN_KEY) || "";
+const nativeFetch = window.fetch.bind(window);
+
+window.fetch = async function(input, init = {}){
+  const url = typeof input === "string" ? input : input.url;
+  const options = { ...init, headers: new Headers(init.headers || {}) };
+
+  if (authToken && !url.includes("/api/auth/login")) {
+    options.headers.set("Authorization", "Bearer " + authToken);
+  }
+
+  const response = await nativeFetch(input, options);
+
+  if (response.status === 401 && !url.includes("/api/auth/login")) {
+    logoutAdmin(false);
+  }
+
+  return response;
+};
+
+function setLoginError(message){
+  const box = document.getElementById("loginError");
+  box.textContent = message || "";
+  box.classList.toggle("hidden", !message);
+}
+
+async function loginAdmin(event){
+  event.preventDefault();
+  const password = document.getElementById("adminPassword").value;
+  setLoginError("");
+
+  try{
+    const response = await nativeFetch(
+      BACKEND_URL + "/api/auth/login",
+      {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({password})
+      }
+    );
+
+    const result = await response.json();
+
+    if(!response.ok || !result.success){
+      throw new Error(result.error || "Login failed.");
+    }
+
+    authToken = result.token;
+    sessionStorage.setItem(AUTH_TOKEN_KEY, authToken);
+    document.getElementById("adminPassword").value = "";
+    document.body.classList.add("authenticated");
+    setLoginError("");
+
+    await Promise.all([
+      loadServerMusic(),
+      refreshBackendStatus()
+    ]);
+    renderStations();
+    renderMusic();
+    renderPlaylist();
+    updateBroadcastUI();
+  }catch(error){
+    setLoginError(error.message || "Login failed.");
+  }
+}
+
+function logoutAdmin(showLogin = true){
+  authToken = "";
+  sessionStorage.removeItem(AUTH_TOKEN_KEY);
+  document.body.classList.remove("authenticated");
+  if(showLogin){
+    setLoginError("");
+    document.getElementById("adminPassword").value = "";
+  }
+}
+
+async function checkAdminSession(){
+  if(!authToken) return;
+
+  try{
+    const response = await nativeFetch(
+      BACKEND_URL + "/api/auth/check",
+      {
+        headers:{
+          "Authorization":"Bearer " + authToken
+        }
+      }
+    );
+
+    if(!response.ok){
+      logoutAdmin(false);
+      return;
+    }
+
+    document.body.classList.add("authenticated");
+  }catch(error){
+    logoutAdmin(false);
+  }
+}
+
+document.getElementById("loginForm").addEventListener("submit", loginAdmin);
 
 /* =====================================================
    STORAGE
@@ -2048,16 +2207,24 @@ if(stations.length === 0){
    INITIALIZE
 ===================================================== */
 
-loadServerMusic();
-refreshBackendStatus();
+async function initializeAdmin(){
+  await checkAdminSession();
 
-renderStations();
+  if(!document.body.classList.contains("authenticated")){
+    return;
+  }
 
-renderMusic();
+  await loadServerMusic();
+  await refreshBackendStatus();
 
-renderPlaylist();
+  renderStations();
+  renderMusic();
+  renderPlaylist();
+  updateBroadcastUI();
+}
 
-updateBroadcastUI();
+initializeAdmin();
+
 
 </script>
 
