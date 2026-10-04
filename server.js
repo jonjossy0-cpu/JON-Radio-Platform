@@ -82,6 +82,9 @@ function clientIp(req) {
 }
 
 function requireAdmin(req, res, next) {
+  // Update metadata is public so JON Stream can check for new versions.
+  if (req.path === "/jon-stream-update") return next();
+
   const auth = req.headers.authorization || "";
   const token = auth.startsWith("Bearer ")
     ? auth.slice(7).trim()
