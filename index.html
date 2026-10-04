@@ -504,7 +504,7 @@ body.dashboard-locked #loginGate{display:none !important;}
     <div class="login-logo">🔐</div>
     <h2>JON RADIO PLATFORM</h2>
     <p>Admin Login</p>
-    <form id="loginForm">
+    <form id="loginForm" onsubmit="return loginAdmin(event)">
       <label for="adminPassword">Password</label>
       <input id="adminPassword" type="password" autocomplete="current-password" required
              style="width:100%;padding:12px;border:1px solid #d0d5dd;border-radius:9px;margin:8px 0;">
@@ -978,7 +978,6 @@ async function loginAdmin(event){
 
   if(!password){
     setLoginError("Please enter the admin password.");
-    if(passwordInput) passwordInput.focus();
     return false;
   }
 
@@ -988,24 +987,23 @@ async function loginAdmin(event){
   }
 
   try{
-    const base=String(BACKEND_URL||"").replace(/\/$/,"");
+    const base=String(BACKEND_URL || "").replace(/\/$/,"");
     const response=await nativeFetch(base+"/api/auth/login",{
       method:"POST",
       headers:{
         "Content-Type":"application/x-www-form-urlencoded;charset=UTF-8",
         "Accept":"application/json"
       },
-      body:new URLSearchParams({password}),
+      body:"password="+encodeURIComponent(password),
       cache:"no-store"
     });
 
-    const text=await response.text();
-    let result=null;
-
+    const raw=await response.text();
+    let result;
     try{
-      result=JSON.parse(text);
-    }catch(parseError){
-      throw new Error("Login server did not return JSON (HTTP "+response.status+").");
+      result=JSON.parse(raw);
+    }catch(e){
+      throw new Error("Login connection failed (HTTP "+response.status+").");
     }
 
     if(!response.ok || !result.success){
@@ -1019,6 +1017,7 @@ async function loginAdmin(event){
     authToken=result.token;
     sessionStorage.setItem(AUTH_TOKEN_KEY,authToken);
     localStorage.removeItem(DASHBOARD_LOCK_KEY);
+
     document.body.classList.add("authenticated");
     document.body.classList.remove("dashboard-locked");
     setLoginError("");
@@ -1026,16 +1025,13 @@ async function loginAdmin(event){
     if(passwordInput) passwordInput.value="";
 
     try{
-      await Promise.all([
-        loadServerMusic(),
-        refreshBackendStatus()
-      ]);
+      await Promise.all([loadServerMusic(),refreshBackendStatus()]);
       renderStations();
       renderMusic();
       renderPlaylist();
       updateBroadcastUI();
-    }catch(loadError){
-      console.warn("Dashboard refresh after login:",loadError);
+    }catch(e){
+      console.warn("Dashboard data loading after login failed:",e);
     }
 
     return true;
@@ -1049,7 +1045,6 @@ async function loginAdmin(event){
     }
   }
 }
-
 function logoutAdmin(showLogin = true){
   authToken = "";
   sessionStorage.removeItem(AUTH_TOKEN_KEY);
