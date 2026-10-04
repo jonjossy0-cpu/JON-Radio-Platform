@@ -2099,7 +2099,7 @@ async function startLive(){
     microphoneStream=await navigator.mediaDevices.getUserMedia({
       audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
     });
-    liveSocket=new WebSocket(websocketUrl("/live-mic"));
+    liveSocket=new WebSocket(websocketUrl("/live-mic?token="+encodeURIComponent(authToken)));
     liveSocket.binaryType="arraybuffer";
     liveSocket.onopen=()=>{
       try{
