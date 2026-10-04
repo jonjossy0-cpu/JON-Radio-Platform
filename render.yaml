@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: jon-radio-platform
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    plan: free
