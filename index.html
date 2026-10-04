@@ -500,6 +500,8 @@ body.dashboard-locked #dashboardLock{display:flex;}
 .lock-card button{width:100%;margin-top:8px}.lock-error{color:#b91c1c;background:#fee2e2;padding:10px;border-radius:9px;margin-top:10px;font-size:13px}
 body.dashboard-locked header,body.dashboard-locked .container,body.dashboard-locked footer{pointer-events:none;user-select:none}
 body.dashboard-locked #dashboardLock{pointer-events:auto}
+
+body.authenticated #lockButton{display:inline-block !important;}
 </style>
 </head>
 
@@ -532,7 +534,8 @@ body.dashboard-locked #dashboardLock{pointer-events:auto}
 <header>
   <h1>JON RADIO PLATFORM</h1>
   <p>Multi-Radio Management & 24/7 Broadcasting Platform</p>
-  <button id="logoutButton" class="dark hidden" onclick="logoutAdmin()">Logout</button>
+  <button id="logoutButton" class="dark hidden" onclick="logoutAdmin()">
+<button id="lockButton" class="warning hidden" onclick="lockDashboard()">🔒 Lock</button>Logout</button>
 </header>
 
 
@@ -966,8 +969,8 @@ async function loginAdmin(event){
       BACKEND_URL + "/api/auth/login",
       {
         method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({password})
+        headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},
+        body:new URLSearchParams({password})
       }
     );
 
@@ -1040,6 +1043,8 @@ document.getElementById("loginForm").addEventListener("submit", loginAdmin);
 let dashboardLocked = false;
 function lockDashboard(){
   dashboardLocked = true;
+  const errorBox = document.getElementById("lockError");
+  if(errorBox) errorBox.classList.add("hidden");
   document.body.classList.add("dashboard-locked");
 }
 async function unlockDashboard(){
@@ -1047,7 +1052,7 @@ async function unlockDashboard(){
   if(password === null) return;
   try{
     const response = await nativeFetch(BACKEND_URL + "/api/auth/login",{
-      method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password})
+      method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body:new URLSearchParams({password})
     });
     const result = await response.json();
     if(!response.ok || !result.success) throw new Error(result.error || "Incorrect password.");
