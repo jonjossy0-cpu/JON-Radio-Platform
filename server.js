@@ -19,7 +19,8 @@ const PORT = process.env.PORT || 3000;
 // =====================================
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));\n
+app.use(express.urlencoded({ extended: true }));
+
 // =====================================
 // CORS — public browser API access
 // Authentication is enforced by Bearer tokens, not browser cookies.
