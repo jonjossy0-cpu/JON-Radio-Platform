@@ -393,15 +393,27 @@ footer{
 
 
 /* ADMIN LOGIN */
-#loginGate{display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:#f4f7fb;}
+#loginGate{
+  position:fixed;
+  inset:0;
+  z-index:10000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(15,23,42,.72);
+  backdrop-filter:blur(3px);
+}
 .login-card{
   width:min(390px,100%);
   background:#fff;
   border-radius:18px;
   padding:28px;
-  box-shadow:0 8px 30px rgba(0,0,0,.12);
+  box-shadow:0 12px 45px rgba(0,0,0,.28);
   text-align:center;
 }
+.login-card .login-logo{line-height:1;}
+.login-card h2{margin-top:4px;}
 .login-logo{font-size:42px;margin-bottom:8px;}
 .login-card h2{font-size:22px;color:#0b63ce;}
 .login-card>p{color:#667085;margin:6px 0 22px;}
@@ -499,10 +511,10 @@ body.dashboard-locked #loginGate{display:none !important;}
 </head>
 
 <body>
-<div id="loginGate">
+<div id="loginGate" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
   <div class="login-card">
     <div class="login-logo">🔐</div>
-    <h2>JON RADIO PLATFORM</h2>
+    <h2 id="loginTitle">JON RADIO PLATFORM</h2>
     <p>Admin Login</p>
     <form id="loginForm" onsubmit="return loginAdmin(event)">
       <label for="adminPassword">Password</label>
