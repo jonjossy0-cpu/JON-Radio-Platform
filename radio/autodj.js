@@ -25,7 +25,7 @@ function playNowSong(name){const n=path.basename(String(name||""));if(!files().i
 function nextSong(){if(!running||live)return false;terminate();if(!load())return false;const s=choose();if(!s)return false;previous=now;now=s.name;next=pickNextPreview();playOne(s,generation);return true}
 function previousSong(){if(!running||live||!previous)return false;const old=now;terminate();if(old)queue.unshift(old);const s=item(previous);now=s.name;next=pickNextPreview();playOne(s,generation);return true}
 function setPlaylist(v){if(!Array.isArray(v))return false;const f=files();playlist=[...new Set(v.map(x=>path.basename(String(x))).filter(x=>f.includes(x)))];index=0;return true}
-function addToPlaylist(v){const n=path.basename(String(v||""));if(!files().includes(n))return false;if(!playlist.includes(n))playlist.push(n);return true}
+function addToPlaylist(v){const n=path.basename(String(v||""));if(!files().includes(n))return false;if(!playlist.includes(n))playlist.push(n);if(!running&&!live){if(!broadcast.start("autodj"))return false;running=true;paused=false;lastAd=Date.now();lastJingle=Date.now();index=Math.max(0,playlist.indexOf(n));advance()}return true}
 function setQueueSong(v){const n=path.basename(String(v||""));if(!files().includes(n))return false;queue.push(n);return true}
 function clearQueue(){queue=[]}
 function getJingles(){return files(JINGLES)}
