@@ -19,7 +19,32 @@ const PORT = process.env.PORT || 3000;
 // =====================================
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));\n
+// =====================================
+// CORS — GitHub Pages frontend
+// Must run before auth so login/preflight receives CORS headers.
+// =====================================
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (origin === "https://jonjossy0-cpu.github.io" || !origin) {
+    if (origin) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    }
+  }
+
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
+
+
 
 // =====================================
 // JON RADIO PLATFORM ADMIN AUTH
@@ -165,19 +190,6 @@ app.get("/api/auth/check", requireAdmin, (req, res) => {
 // Public update metadata, when present, is intentionally defined before this guard.
 app.use("/api", requireAdmin);
 
-
-// GitHub Pages frontend connection
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin === "https://jonjossy0-cpu.github.io" || !origin) {
-    if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-  res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  if (req.method === "OPTIONS") return res.sendStatus(204);
-  next();
-});
 
 // =====================================
 // DIRECTORIES
