@@ -126,14 +126,17 @@ function getJingle() {
 
 function getFollowingItem() {
   if (shouldPlayAd()) return getTimedAd();
+  if (repeatMode && currentItem && currentItem.type === "song") return makeSong(currentItem.name);
   const song = getNextSong();
   if (!song) return null;
   return song;
 }
 
 function getTransitionItem() {
-  const jingle = getJingle();
-  if (jingle) return jingle;
+  if (currentItem && currentItem.type === "song") {
+    const jingle = getJingle();
+    if (jingle) return jingle;
+  }
   return getFollowingItem();
 }
 
