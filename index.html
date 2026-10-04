@@ -505,8 +505,6 @@ body.dashboard-locked header,body.dashboard-locked .container,body.dashboard-loc
 body.dashboard-locked #dashboardLock{pointer-events:auto}
 
 body.authenticated #lockButton{display:inline-block !important;}
-body.dashboard-locked #loginGate{display:none !important;}
-body.dashboard-locked #loginGate{display:none !important;}
 </style>
 </head>
 
@@ -1051,6 +1049,8 @@ async function checkAdminSession(){
     authToken = "";
     sessionStorage.removeItem(AUTH_TOKEN_KEY);
     document.body.classList.add("dashboard-locked");
+    // Keep the admin login overlay available. Login must always take priority
+    // over the dashboard-lock screen so a stale lock cannot trap the user.
     return;
   }
   if(!authToken) return;
