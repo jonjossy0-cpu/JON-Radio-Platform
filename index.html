@@ -968,83 +968,60 @@ function setLoginError(message){
 }
 
 async function loginAdmin(event){
-  if(event) event.preventDefault();
-
-  const passwordInput=document.getElementById("adminPassword");
-  const loginButton=document.getElementById("loginButton");
-  const password=passwordInput ? passwordInput.value : "";
-
+  event.preventDefault();
+  const password = document.getElementById("adminPassword").value;
   setLoginError("");
-
-  if(!password){
-    setLoginError("Please enter the admin password.");
-    return false;
-  }
-
-  if(loginButton){
-    loginButton.disabled=true;
-    loginButton.textContent="LOGGING IN...";
-  }
+  const button = document.getElementById("loginButton");
+  if(button) button.disabled = true;
 
   try{
-    const base=String(BACKEND_URL || "").replace(/\/$/,"");
-    const response=await nativeFetch(base+"/api/auth/login",{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/x-www-form-urlencoded;charset=UTF-8",
-        "Accept":"application/json"
-      },
-      body:"password="+encodeURIComponent(password),
-      cache:"no-store"
-    });
+    const response = await nativeFetch(
+      BACKEND_URL + "/api/auth/login",
+      {
+        method:"POST",
+        headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},
+        body:new URLSearchParams({password})
+      }
+    );
 
-    const raw=await response.text();
+    const text = await response.text();
     let result;
     try{
-      result=JSON.parse(raw);
-    }catch(e){
-      throw new Error("Login connection failed (HTTP "+response.status+").");
+      result = JSON.parse(text);
+    }catch{
+      throw new Error("Login connection failed. Server returned an invalid response.");
     }
 
     if(!response.ok || !result.success){
       throw new Error(result.error || "Incorrect password.");
     }
 
-    if(!result.token){
-      throw new Error("Login server did not return a session token.");
-    }
+    authToken = result.token || "";
+    if(!authToken) throw new Error("Login failed: no session was created.");
 
-    authToken=result.token;
-    sessionStorage.setItem(AUTH_TOKEN_KEY,authToken);
+    sessionStorage.setItem(AUTH_TOKEN_KEY, authToken);
     localStorage.removeItem(DASHBOARD_LOCK_KEY);
-
+    document.getElementById("adminPassword").value = "";
     document.body.classList.add("authenticated");
-    document.body.classList.remove("dashboard-locked");
     setLoginError("");
 
-    if(passwordInput) passwordInput.value="";
-
     try{
-      await Promise.all([loadServerMusic(),refreshBackendStatus()]);
+      await loadServerMusic();
+      await refreshBackendStatus();
       renderStations();
       renderMusic();
       renderPlaylist();
       updateBroadcastUI();
-    }catch(e){
-      console.warn("Dashboard data loading after login failed:",e);
+    }catch(loadError){
+      console.warn("Post-login dashboard refresh failed:", loadError);
     }
-
-    return true;
   }catch(error){
-    setLoginError(error && error.message ? error.message : "Login failed.");
-    return false;
+    setLoginError(error.message || "Login failed.");
   }finally{
-    if(loginButton){
-      loginButton.disabled=false;
-      loginButton.textContent="LOGIN";
-    }
+    if(button) button.disabled = false;
   }
 }
+
 function logoutAdmin(showLogin = true){
   authToken = "";
   sessionStorage.removeItem(AUTH_TOKEN_KEY);
