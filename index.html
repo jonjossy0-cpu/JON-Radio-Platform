@@ -393,7 +393,7 @@ footer{
 
 
 /* ADMIN LOGIN */
-#loginGate{display:none !important;}
+#loginGate{display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:#f4f7fb;}
 .login-card{
   width:min(390px,100%);
   background:#fff;
@@ -498,7 +498,21 @@ body.dashboard-locked #loginGate{display:none !important;}
 </style>
 </head>
 
-<body class="authenticated">
+<body>
+<div id="loginGate">
+  <div class="login-card">
+    <div class="login-logo">🔐</div>
+    <h2>JON RADIO PLATFORM</h2>
+    <p>Admin Login</p>
+    <form id="loginForm">
+      <label for="adminPassword">Password</label>
+      <input id="adminPassword" type="password" autocomplete="current-password" required
+             style="width:100%;padding:12px;border:1px solid #d0d5dd;border-radius:9px;margin:8px 0;">
+      <button id="loginButton" type="submit" class="primary">LOGIN</button>
+      <div id="loginError" class="login-error hidden"></div>
+    </form>
+  </div>
+</div>
 
 <div id="dashboardLock">
   <div class="lock-card">
