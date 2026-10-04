@@ -979,93 +979,42 @@ function setLoginError(message){
 
 async function loginAdmin(event){
   event.preventDefault();
-
-  const passwordInput = document.getElementById("adminPassword");
-  const password = passwordInput.value;
+  const password = document.getElementById("adminPassword").value;
   setLoginError("");
 
-  if(!password){
-    setLoginError("Please enter the admin password.");
-    return;
-  }
-
   try{
-    const controller = new AbortController();
-    const timeout = setTimeout(()=>controller.abort(), 15000);
-
     const response = await nativeFetch(
-      BACKEND_URL.replace(/\/$/,"") + "/api/auth/login",
+      BACKEND_URL + "/api/auth/login",
       {
         method:"POST",
-        mode:"cors",
-        cache:"no-store",
-        credentials:"omit",
-        headers:{
-          "Content-Type":"application/x-www-form-urlencoded;charset=UTF-8",
-          "Accept":"application/json"
-        },
-        body:new URLSearchParams({password}),
-        signal:controller.signal
+        headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},
+        body:new URLSearchParams({password})
       }
     );
 
-    clearTimeout(timeout);
-
-    const text = await response.text();
-    let result;
-    try{
-      result = JSON.parse(text);
-    }catch{
-      throw new Error("Login server did not return JSON. Please refresh the page and try again.");
-    }
+    const result = await response.json();
 
     if(!response.ok || !result.success){
       throw new Error(result.error || "Login failed.");
     }
 
-    if(!result.token){
-      throw new Error("Login succeeded but no admin session was returned.");
-    }
-
-    // Establish the session immediately. Dashboard loading must never undo a successful login.
     authToken = result.token;
     sessionStorage.setItem(AUTH_TOKEN_KEY, authToken);
     localStorage.removeItem(DASHBOARD_LOCK_KEY);
-    document.body.classList.remove("dashboard-locked");
+    document.getElementById("adminPassword").value = "";
     document.body.classList.add("authenticated");
-    passwordInput.value = "";
     setLoginError("");
 
-    // Refresh dashboard data after login, but never treat a data-load error as a login failure.
-    Promise.all([
+    await Promise.all([
       loadServerMusic(),
       refreshBackendStatus()
-    ]).then(()=>{
-      renderStations();
-      renderMusic();
-      renderPlaylist();
-      updateBroadcastUI();
-    }).catch(error=>{
-      console.warn("Dashboard refresh after login failed:", error);
-    });
-
+    ]);
+    renderStations();
+    renderMusic();
+    renderPlaylist();
+    updateBroadcastUI();
   }catch(error){
-    if(error.name === "AbortError"){
-      setLoginError("Login connection timed out. Please try again.");
-    }else{
-      setLoginError(error.message || "Login failed.");
-    }
-  }
-}
-
-function logoutAdmin(showLogin = true){
-  authToken = "";
-  sessionStorage.removeItem(AUTH_TOKEN_KEY);
-  localStorage.removeItem(DASHBOARD_LOCK_KEY);
-  document.body.classList.remove("authenticated");
-  if(showLogin){
-    setLoginError("");
-    document.getElementById("adminPassword").value = "";
+    setLoginError(error.message || "Login failed.");
   }
 }
 
