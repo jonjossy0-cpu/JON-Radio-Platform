@@ -1,0 +1,2403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>JON Radio Platform</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+  background:#f4f7fb;
+  color:#172033;
+}
+
+button{
+  border:0;
+  border-radius:9px;
+  padding:11px 15px;
+  cursor:pointer;
+  font-weight:700;
+}
+
+button:active{
+  transform:scale(.98);
+}
+
+header{
+  background:#0b63ce;
+  color:#fff;
+  padding:18px 20px;
+  text-align:center;
+}
+
+header h1{
+  font-size:25px;
+}
+
+header p{
+  margin-top:6px;
+  font-size:13px;
+  opacity:.9;
+}
+
+.container{
+  width:min(1150px,94%);
+  margin:24px auto;
+}
+
+/* DASHBOARD */
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:14px;
+  margin-bottom:22px;
+}
+
+.stat{
+  background:#fff;
+  border-radius:14px;
+  padding:18px 10px;
+  text-align:center;
+  box-shadow:0 3px 12px rgba(0,0,0,.07);
+}
+
+.stat h2{
+  color:#0b63ce;
+  font-size:27px;
+}
+
+.stat p{
+  color:#667085;
+  font-size:13px;
+  margin-top:5px;
+}
+
+/* SECTION */
+
+.section{
+  background:#fff;
+  border-radius:15px;
+  padding:22px;
+  margin-bottom:22px;
+  box-shadow:0 3px 12px rgba(0,0,0,.07);
+}
+
+.section-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:18px;
+}
+
+.section-title h2{
+  font-size:20px;
+}
+
+/* BUTTONS */
+
+.primary{
+  background:#0b63ce;
+  color:#fff;
+}
+
+.success{
+  background:#16a34a;
+  color:#fff;
+}
+
+.warning{
+  background:#f59e0b;
+  color:#fff;
+}
+
+.danger{
+  background:#dc2626;
+  color:#fff;
+}
+
+.dark{
+  background:#344054;
+  color:#fff;
+}
+
+.light{
+  background:#eaf2ff;
+  color:#0b63ce;
+}
+
+/* NOW PLAYING */
+
+.now-playing{
+  background:#f8fbff;
+  border:1px solid #dce8f8;
+  border-radius:13px;
+  padding:18px;
+}
+
+.live-indicator{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  background:#fee2e2;
+  color:#b91c1c;
+  padding:6px 10px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:bold;
+}
+
+.dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#dc2626;
+}
+
+.now-title{
+  font-size:22px;
+  margin:13px 0 5px;
+}
+
+.next{
+  color:#667085;
+  font-size:14px;
+}
+
+/* STATIONS */
+
+.station{
+  border:1px solid #e3e8ef;
+  border-radius:13px;
+  padding:18px;
+  margin-bottom:13px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  flex-wrap:wrap;
+}
+
+.station-info{
+  flex:1;
+  min-width:220px;
+}
+
+.station-info h3{
+  font-size:18px;
+  margin-bottom:7px;
+}
+
+.station-info p{
+  color:#667085;
+  font-size:13px;
+  margin:3px 0;
+  word-break:break-word;
+}
+
+.status{
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:20px;
+  font-size:11px;
+  font-weight:bold;
+  margin-top:6px;
+}
+
+.online{
+  background:#dcfce7;
+  color:#15803d;
+}
+
+.offline{
+  background:#fee2e2;
+  color:#b91c1c;
+}
+
+.station-actions{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+
+/* FORMS */
+
+.form-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:13px;
+}
+
+.form-group{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.form-group.full{
+  grid-column:1/-1;
+}
+
+label{
+  font-size:13px;
+  font-weight:bold;
+  color:#475467;
+}
+
+input,select{
+  width:100%;
+  padding:12px;
+  border:1px solid #d5dbe5;
+  border-radius:9px;
+  outline:none;
+  font-size:14px;
+}
+
+input:focus,
+select:focus{
+  border-color:#0b63ce;
+}
+
+/* MUSIC */
+
+.music-item{
+  border:1px solid #e4e7ec;
+  border-radius:11px;
+  padding:13px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:9px;
+  flex-wrap:wrap;
+}
+
+.music-info{
+  min-width:180px;
+  flex:1;
+}
+
+.music-info strong{
+  display:block;
+  margin-bottom:4px;
+}
+
+.music-info small{
+  color:#667085;
+}
+
+.music-actions{
+  display:flex;
+  gap:6px;
+}
+
+/* PLAYLIST */
+
+.playlist-item{
+  padding:12px;
+  border:1px solid #e4e7ec;
+  border-radius:10px;
+  margin-bottom:8px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+.playlist-number{
+  background:#eaf2ff;
+  color:#0b63ce;
+  width:30px;
+  height:30px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  border-radius:50%;
+  font-weight:bold;
+}
+
+/* LIVE */
+
+.live-box{
+  border:1px solid #f0d0d0;
+  background:#fff8f8;
+  border-radius:13px;
+  padding:20px;
+}
+
+.live-status{
+  font-size:18px;
+  font-weight:bold;
+  margin-bottom:8px;
+}
+
+.live-help{
+  color:#667085;
+  font-size:13px;
+  line-height:1.6;
+  margin-bottom:15px;
+}
+
+/* SETTINGS */
+
+.setting-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  padding:14px 0;
+  border-bottom:1px solid #eaecf0;
+}
+
+.setting-row:last-child{
+  border-bottom:0;
+}
+
+.setting-row small{
+  display:block;
+  color:#667085;
+  margin-top:4px;
+}
+
+/* EMPTY */
+
+.empty{
+  text-align:center;
+  padding:30px;
+  color:#667085;
+}
+
+/* HIDDEN */
+
+.hidden{
+  display:none !important;
+}
+
+/* FOOTER */
+
+footer{
+  text-align:center;
+  color:#667085;
+  font-size:13px;
+  padding:25px;
+}
+
+
+/* ADMIN LOGIN */
+#loginGate{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:#f4f7fb;
+}
+.login-card{
+  width:min(390px,100%);
+  background:#fff;
+  border-radius:18px;
+  padding:28px;
+  box-shadow:0 8px 30px rgba(0,0,0,.12);
+  text-align:center;
+}
+.login-logo{font-size:42px;margin-bottom:8px;}
+.login-card h2{font-size:22px;color:#0b63ce;}
+.login-card>p{color:#667085;margin:6px 0 22px;}
+.login-card form{text-align:left;}
+.login-card form button{width:100%;margin-top:8px;}
+.login-error{
+  color:#b91c1c;
+  background:#fee2e2;
+  padding:10px;
+  border-radius:9px;
+  margin-top:10px;
+  font-size:13px;
+}
+body.authenticated #loginGate{display:none;}
+body.authenticated #logoutButton{display:inline-block !important;}
+
+/* MOBILE */
+
+@media(max-width:900px){
+
+  .stats{
+    grid-template-columns:repeat(3,1fr);
+  }
+
+}
+
+@media(max-width:650px){
+
+  .stats{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .form-grid{
+    grid-template-columns:1fr;
+  }
+
+  .form-group.full{
+    grid-column:auto;
+  }
+
+  .station-actions{
+    width:100%;
+  }
+
+  .station-actions button{
+    flex:1;
+  }
+
+  .section{
+    padding:16px;
+  }
+
+  header h1{
+    font-size:21px;
+  }
+
+}
+
+@media(max-width:420px){
+
+  .stats{
+    gap:8px;
+  }
+
+  .stat{
+    padding:13px 7px;
+  }
+
+  .stat h2{
+    font-size:22px;
+  }
+
+  .stat p{
+    font-size:11px;
+  }
+
+}
+
+/* DASHBOARD LOCK */
+#dashboardLock{
+  position:fixed;inset:0;z-index:9998;display:none;align-items:center;justify-content:center;
+  background:rgba(15,23,42,.72);padding:20px;
+}
+body.dashboard-locked #dashboardLock{display:flex;}
+.lock-card{width:min(390px,100%);background:#fff;border-radius:18px;padding:28px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.lock-card h2{color:#0b63ce;margin:8px 0}.lock-card p{color:#667085;margin-bottom:18px}
+.lock-card button{width:100%;margin-top:8px}.lock-error{color:#b91c1c;background:#fee2e2;padding:10px;border-radius:9px;margin-top:10px;font-size:13px}
+body.dashboard-locked header,body.dashboard-locked .container,body.dashboard-locked footer{pointer-events:none;user-select:none}
+body.dashboard-locked #dashboardLock{pointer-events:auto}
+
+body.authenticated #lockButton{display:inline-block !important;}
+body.dashboard-locked #loginGate{display:none;}
+body.dashboard-locked #loginGate{display:none;}
+</style>
+</head>
+
+<body>
+
+<div id="loginGate">
+  <div class="login-card">
+    <div class="login-logo">🔐</div>
+    <h2>JON RADIO PLATFORM</h2>
+    <p>Admin Login</p>
+    <form id="loginForm">
+      <label for="adminPassword">Password</label>
+      <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Enter admin password" required>
+      <button class="primary" type="submit">LOGIN</button>
+      <div id="loginError" class="login-error hidden"></div>
+    </form>
+  </div>
+</div>
+
+
+<div id="dashboardLock">
+  <div class="lock-card">
+    <div style="font-size:42px">🔒</div>
+    <h2>Dashboard Locked</h2>
+    <p>Broadcasting continues in the background.</p>
+    <button class="primary" onclick="unlockDashboard()">🔓 Unlock</button>
+    <div id="lockError" class="lock-error hidden"></div>
+  </div>
+</div>
+<header>
+  <h1>JON RADIO PLATFORM</h1>
+  <p>Multi-Radio Management & 24/7 Broadcasting Platform</p>
+  <button id="lockButton" class="warning hidden" onclick="lockDashboard()">🔒 Lock</button>
+  <button id="logoutButton" class="dark hidden" onclick="logoutAdmin()">Logout</button>
+</header>
+
+
+<div class="container">
+
+<!-- ================= DASHBOARD ================= -->
+
+<div class="stats">
+
+  <div class="stat">
+    <h2 id="stationCount">0</h2>
+    <p>Stations</p>
+  </div>
+
+  <div class="stat">
+    <h2 id="onlineCount">0</h2>
+    <p>Online</p>
+  </div>
+
+  <div class="stat">
+    <h2 id="listenerCount">0</h2>
+    <p>Listeners</p>
+  </div>
+
+  <div class="stat">
+    <h2 id="musicCount">0</h2>
+    <p>Music</p>
+  </div>
+
+  <div class="stat">
+    <h2 id="broadcastStatus">OFF</h2>
+    <p>Broadcast</p>
+  </div>
+
+</div>
+
+
+<!-- ================= NOW PLAYING ================= -->
+
+<div class="section">
+
+  <div class="section-title">
+    <h2>🎧 Now Playing</h2>
+
+    <span id="broadcastBadge"
+          class="live-indicator">
+      <span class="dot"></span>
+      OFFLINE
+    </span>
+  </div>
+
+  <div class="now-playing">
+
+    <div class="now-title"
+         id="nowPlaying">
+      Nothing Playing
+    </div>
+
+    <div class="next"
+         id="nextSong">
+      Next: —
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ================= RADIO STATIONS ================= -->
+
+<div class="section">
+
+  <div class="section-title">
+
+    <h2>📻 Radio Stations</h2>
+
+    <button class="primary"
+            onclick="showSection('addStationSection')">
+      + Add Station
+    </button>
+
+  </div>
+
+  <div id="stations"></div>
+
+</div>
+
+
+<!-- ================= ADD STATION ================= -->
+
+<div id="addStationSection"
+     class="section hidden">
+
+  <div class="section-title">
+    <h2>➕ Add Radio Station</h2>
+
+    <button class="light"
+            onclick="hideSection('addStationSection')">
+      Close
+    </button>
+  </div>
+
+  <form id="stationForm">
+
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label>Station Name</label>
+        <input id="stationName"
+               type="text"
+               placeholder="JON FM ETHIOPIA"
+               required>
+      </div>
+
+      <div class="form-group">
+        <label>Country</label>
+        <input id="stationCountry"
+               type="text"
+               placeholder="Ethiopia">
+      </div>
+
+      <div class="form-group">
+        <label>Language</label>
+        <input id="stationLanguage"
+               type="text"
+               placeholder="Amharic">
+      </div>
+
+      <div class="form-group">
+        <label>Format</label>
+
+        <select id="stationFormat">
+          <option value="MP3">MP3</option>
+          <option value="AAC">AAC</option>
+        </select>
+      </div>
+
+      <div class="form-group full">
+        <label>Stream URL</label>
+
+        <input id="stationUrl"
+               type="url"
+               placeholder="https://example.com/stream"
+               required>
+      </div>
+
+      <div class="form-group full">
+
+        <button class="primary"
+                type="submit">
+          Save Station
+        </button>
+
+      </div>
+
+    </div>
+
+  </form>
+
+</div>
+
+
+<!-- ================= MUSIC LIBRARY ================= -->
+
+<div class="section">
+
+  <div class="section-title">
+
+    <h2>🎵 Music Library</h2>
+
+    <label class="primary"
+           style="padding:11px 15px;
+                  border-radius:9px;
+                  cursor:pointer;">
+
+      + Upload Music
+
+      <input id="musicUpload"
+             type="file"
+             accept="audio/mpeg,audio/mp3,audio/wav,audio/*"
+             multiple
+             style="display:none;">
+
+    </label>
+
+  </div>
+
+  <div id="musicLibrary"></div>
+
+</div>
+
+
+<!-- ================= PLAYLIST ================= -->
+
+<div class="section">
+
+  <div class="section-title">
+
+    <h2>📋 JON FM Playlist</h2>
+
+    <button class="primary"
+            onclick="buildPlaylist()">
+      Create Playlist
+    </button>
+
+  </div>
+
+  <div id="playlist"></div>
+
+</div>
+
+
+<!-- ================= AUTO DJ ================= -->
+
+<div class="section">
+  <div class="section-title">
+    <h2>🤖 24/7 Auto DJ</h2>
+    <span id="autoDJStatus" class="status offline">OFF</span>
+  </div>
+  <div class="live-help">Professional Auto DJ controls. Live Microphone always takes priority.</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+    <button id="autoDJButton" class="success" onclick="toggleAutoDJ()">▶ Start Auto DJ</button>
+    <button class="warning" onclick="stopAutoDJ()">■ Stop</button>
+    <button class="light" onclick="autoDJNext()">⏭ Next Song</button>
+    <button class="light" onclick="autoDJPrevious()">⏮ Previous</button>
+  </div>
+  <div class="form-grid">
+    <div class="form-group"><label>Shuffle</label><select id="djShuffle" onchange="saveDJSettings()"><option value="false">OFF</option><option value="true">ON</option></select></div>
+    <div class="form-group"><label>Repeat</label><select id="djRepeat" onchange="saveDJSettings()"><option value="false">OFF</option><option value="true">ON</option></select></div>
+    <div class="form-group"><label>Crossfade (seconds)</label><select id="djCrossfade" onchange="saveDJSettings()"><option>0</option><option selected>5</option><option>10</option><option>15</option></select></div>
+    <div class="form-group"><label>Advertisement interval</label><select id="djAdInterval" onchange="saveDJSettings()"><option value="0">OFF</option><option value="15">Every 15 min</option><option value="30">Every 30 min</option><option value="60">Every 60 min</option></select></div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+    <button class="light" onclick="clearDJQueue()">🧹 Clear Queue</button>
+    <button class="light" onclick="loadDJHistory()">📜 Play History</button>
+  </div>
+  <div id="djHistory" class="live-help" style="margin-top:12px;"></div>
+</div>
+
+<!-- ================= ADVERTISEMENT ================= -->
+<div class="section">
+  <div class="section-title"><h2>📢 Advertisement Audio</h2><span id="adCount" class="status offline">0 ADS</span></div>
+  <div class="live-help">Upload advertisement audio separately. Auto DJ inserts ads according to the selected timer.</div>
+  <label class="primary" style="display:inline-block;padding:11px 15px;border-radius:9px;cursor:pointer;">
+    + Upload Advertisement
+    <input id="adUpload" type="file" accept="audio/*,.mp3,.wav,.m4a" multiple style="display:none;">
+  </label>
+  <div id="adLibrary" style="margin-top:14px;"></div>
+</div>
+
+<!-- ================= JINGLES ================= -->
+<div class="section">
+  <div class="section-title"><h2>🎙️ Jingles / Station ID</h2><span id="jingleCount" class="status offline">0</span></div>
+  <div class="live-help">Keep station IDs and jingles separate from the normal music library.</div>
+  <label class="primary" style="display:inline-block;padding:11px 15px;border-radius:9px;cursor:pointer;">
+    + Upload Jingle
+    <input id="jingleUpload" type="file" accept="audio/*,.mp3,.wav,.m4a" multiple style="display:none;">
+  </label>
+  <div id="jingleLibrary" style="margin-top:14px;"></div>
+</div>
+
+
+<!-- ================= LIVE MICROPHONE ================= -->
+
+<div class="section">
+
+  <div class="section-title">
+
+    <h2>🎙️ Live Microphone</h2>
+
+    <span id="liveStatus"
+          class="status offline">
+      OFFLINE
+    </span>
+
+  </div>
+
+  <div class="live-box">
+
+    <div class="live-status"
+         id="liveText">
+      Microphone is OFF
+    </div>
+
+    <div class="live-help">
+      Allow microphone access from this computer.
+      Live broadcasting requires the future JON FM
+      broadcast backend to send the microphone audio
+      to the public stream.
+    </div>
+
+    <button class="danger"
+            onclick="startLive()">
+      🔴 Start Live
+    </button>
+
+    <button class="dark"
+            onclick="stopLive()">
+      ■ Stop Live
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- ================= STATION SETTINGS ================= -->
+
+<div class="section">
+
+  <div class="section-title">
+    <h2>⚙️ Station Settings</h2>
+  </div>
+
+  <div class="setting-row">
+
+    <div>
+      <strong>Station</strong>
+      <small>Primary station</small>
+    </div>
+
+    <strong>JON FM ETHIOPIA</strong>
+
+  </div>
+
+  <div class="setting-row">
+
+    <div>
+      <strong>Broadcast Mode</strong>
+      <small>Automatic / Live</small>
+    </div>
+
+    <select id="broadcastMode"
+            style="width:160px;">
+
+      <option value="auto">Auto DJ</option>
+      <option value="live">Live</option>
+
+    </select>
+
+  </div>
+
+  <div class="setting-row">
+
+    <div>
+      <strong>Default Format</strong>
+      <small>Radio stream format</small>
+    </div>
+
+    <strong>MP3 / AAC</strong>
+
+  </div>
+
+  <div class="setting-row">
+
+    <div>
+      <strong>Broadcast</strong>
+      <small>24/7 system status</small>
+    </div>
+
+    <span id="settingBroadcast"
+          class="status offline">
+      OFFLINE
+    </span>
+
+  </div>
+
+</div>
+
+
+<!-- ================= PLATFORM INFO ================= -->
+
+<div class="section">
+
+  <h2 style="margin-bottom:12px;">
+    ℹ️ JON Radio Platform
+  </h2>
+
+  <div class="live-help">
+
+    <p>• Multi-radio station management</p>
+    <p>• JON FM Ethiopia primary station</p>
+    <p>• Music upload and library</p>
+    <p>• Playlist management</p>
+    <p>• 24/7 Auto DJ architecture</p>
+    <p>• Computer microphone Live architecture</p>
+    <p>• MP3 / AAC support</p>
+    <p>• Now Playing / Next Song</p>
+    <p>• Listener monitoring architecture</p>
+    <p>• Mobile-friendly administration</p>
+    <p>• Future real broadcasting backend</p>
+
+  </div>
+
+</div>
+
+</div>
+
+
+<footer>
+  © 2026 JON MEDIA SERVICE — JON RADIO PLATFORM
+</footer>
+
+
+<script>
+
+
+/* =====================================================
+   ADMIN AUTHENTICATION
+===================================================== */
+
+const AUTH_TOKEN_KEY = "jonRadioAdminSession";
+const DASHBOARD_LOCK_KEY = "jonRadioDashboardLocked";
+let authToken = sessionStorage.getItem(AUTH_TOKEN_KEY) || "";
+const nativeFetch = window.fetch.bind(window);
+
+window.fetch = async function(input, init = {}){
+  const url = typeof input === "string" ? input : input.url;
+  const options = { ...init, headers: new Headers(init.headers || {}) };
+
+  if (authToken && !url.includes("/api/auth/login")) {
+    options.headers.set("Authorization", "Bearer " + authToken);
+  }
+
+  const response = await nativeFetch(input, options);
+
+  if (response.status === 401 && !url.includes("/api/auth/login")) {
+    logoutAdmin(false);
+  }
+
+  return response;
+};
+
+function setLoginError(message){
+  const box = document.getElementById("loginError");
+  box.textContent = message || "";
+  box.classList.toggle("hidden", !message);
+}
+
+async function loginAdmin(event){
+  event.preventDefault();
+  const password = document.getElementById("adminPassword").value;
+  setLoginError("");
+
+  try{
+    const response = await nativeFetch(
+      BACKEND_URL + "/api/auth/login",
+      {
+        method:"POST",
+        headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},
+        body:new URLSearchParams({password})
+      }
+    );
+
+    const result = await response.json();
+
+    if(!response.ok || !result.success){
+      throw new Error(result.error || "Login failed.");
+    }
+
+    authToken = result.token;
+    sessionStorage.setItem(AUTH_TOKEN_KEY, authToken);
+    localStorage.removeItem(DASHBOARD_LOCK_KEY);
+    document.getElementById("adminPassword").value = "";
+    document.body.classList.add("authenticated");
+    setLoginError("");
+
+    await Promise.all([
+      loadServerMusic(),
+      refreshBackendStatus()
+    ]);
+    renderStations();
+    renderMusic();
+    renderPlaylist();
+    updateBroadcastUI();
+  }catch(error){
+    setLoginError(error.message || "Login failed.");
+  }
+}
+function logoutAdmin(showLogin = true){
+  authToken = "";
+  sessionStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(DASHBOARD_LOCK_KEY);
+  document.body.classList.remove("authenticated");
+  if(showLogin){
+    setLoginError("");
+    document.getElementById("adminPassword").value = "";
+  }
+}
+
+async function checkAdminSession(){
+  if(localStorage.getItem(DASHBOARD_LOCK_KEY) === "1"){
+    authToken = "";
+    sessionStorage.removeItem(AUTH_TOKEN_KEY);
+    document.body.classList.add("dashboard-locked");
+    return;
+  }
+  if(!authToken) return;
+
+  try{
+    const response = await nativeFetch(
+      BACKEND_URL + "/api/auth/check",
+      {
+        headers:{
+          "Authorization":"Bearer " + authToken
+        }
+      }
+    );
+
+    if(!response.ok){
+      logoutAdmin(false);
+      return;
+    }
+
+    document.body.classList.add("authenticated");
+  }catch(error){
+    logoutAdmin(false);
+  }
+}
+
+document.getElementById("loginForm").addEventListener("submit", loginAdmin);
+
+
+
+/* =====================================================
+   DASHBOARD LOCK
+===================================================== */
+let dashboardLocked = false;
+function lockDashboard(){
+  dashboardLocked = true;
+  authToken = "";
+  sessionStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.setItem(DASHBOARD_LOCK_KEY, "1");
+  document.body.classList.remove("authenticated");
+  authToken = "";
+  sessionStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.setItem(DASHBOARD_LOCK_KEY, "1");
+  document.body.classList.remove("authenticated");
+  const errorBox = document.getElementById("lockError");
+  if(errorBox) errorBox.classList.add("hidden");
+  document.body.classList.add("dashboard-locked");
+}
+async function unlockDashboard(){
+  const password = window.prompt("Enter Admin Password to unlock:");
+  if(password === null) return;
+  try{
+    const response = await nativeFetch(BACKEND_URL + "/api/auth/login",{
+      method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body:new URLSearchParams({password})
+    });
+    const result = await response.json();
+    if(!response.ok || !result.success) throw new Error(result.error || "Incorrect password.");
+    authToken = result.token;
+    sessionStorage.setItem(AUTH_TOKEN_KEY, authToken);
+    localStorage.removeItem(DASHBOARD_LOCK_KEY);
+    document.body.classList.add("authenticated");
+    dashboardLocked = false;
+    document.body.classList.remove("dashboard-locked");
+    setLoginError("");
+  }catch(error){
+    const box=document.getElementById("lockError");
+    box.textContent=error.message || "Unlock failed.";
+    box.classList.remove("hidden");
+  }
+}
+
+/* =====================================================
+   STORAGE
+===================================================== */
+
+let stations =
+  JSON.parse(
+    localStorage.getItem("jonRadioStations")
+  ) || [];
+
+
+let musicLibrary =
+  JSON.parse(
+    localStorage.getItem("jonMusicLibrary")
+  ) || [];
+
+
+let playlist =
+  JSON.parse(
+    localStorage.getItem("jonPlaylist")
+  ) || [];
+
+
+/* =====================================================
+   RUNTIME
+===================================================== */
+
+let currentAudio = null;
+let currentStation = null;
+
+let autoDJ = false;
+let liveMode = false;
+
+let microphoneStream = null;
+let microphoneRecorder = null;
+let liveSocket = null;
+const BACKEND_URL = window.JON_RADIO_BACKEND || "https://jon-radio-platform.onrender.com";
+function websocketUrl(path){ const base=BACKEND_URL.replace(/\/$/,""); const url=new URL(base+path); url.protocol=url.protocol==="https:"?"wss:":"ws:"; return url.toString(); }
+
+
+/* =====================================================
+   SAVE
+===================================================== */
+
+function saveStations(){
+
+  localStorage.setItem(
+    "jonRadioStations",
+    JSON.stringify(stations)
+  );
+
+}
+
+
+function saveMusic(){
+
+  localStorage.setItem(
+    "jonMusicLibrary",
+    JSON.stringify(musicLibrary)
+  );
+
+}
+
+
+function savePlaylist(){
+
+  localStorage.setItem(
+    "jonPlaylist",
+    JSON.stringify(playlist)
+  );
+
+}
+
+
+/* =====================================================
+   HTML SECURITY
+===================================================== */
+
+function escapeHTML(value){
+
+  return String(value || "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+
+/* =====================================================
+   SECTIONS
+===================================================== */
+
+function showSection(id){
+
+  document
+    .getElementById(id)
+    .classList.remove("hidden");
+
+  document
+    .getElementById(id)
+    .scrollIntoView({
+      behavior:"smooth"
+    });
+
+}
+
+
+function hideSection(id){
+
+  document
+    .getElementById(id)
+    .classList.add("hidden");
+
+}
+
+
+/* =====================================================
+   STATIONS
+===================================================== */
+
+function renderStations(){
+
+  const box =
+    document.getElementById("stations");
+
+  box.innerHTML = "";
+
+  if(stations.length === 0){
+
+    box.innerHTML =
+      '<div class="empty">No stations added yet.</div>';
+
+  }
+
+
+  stations.forEach((station,index)=>{
+
+    const item =
+      document.createElement("div");
+
+    item.className = "station";
+
+    item.innerHTML = `
+
+      <div class="station-info">
+
+        <h3>
+          📻 ${escapeHTML(station.name)}
+        </h3>
+
+        <p>
+          🌍 ${escapeHTML(
+            station.country || "Unknown"
+          )}
+        </p>
+
+        <p>
+          🗣 ${escapeHTML(
+            station.language || "Unknown"
+          )}
+        </p>
+
+        <p>
+          🎵 ${escapeHTML(
+            station.format || "MP3"
+          )}
+        </p>
+
+        <p>
+          🔗 ${escapeHTML(station.url)}
+        </p>
+
+        <span
+          id="stationStatus-${index}"
+          class="status offline">
+          OFFLINE
+        </span>
+
+      </div>
+
+      <div class="station-actions">
+
+        <button
+          class="success"
+          onclick="playStation(${index})">
+          ▶ Play
+        </button>
+
+        <button
+          class="warning"
+          onclick="stopStation(${index})">
+          ■ Stop
+        </button>
+
+        <button
+          class="danger"
+          onclick="deleteStation(${index})">
+          🗑 Delete
+        </button>
+
+      </div>
+
+    `;
+
+    box.appendChild(item);
+
+  });
+
+  updateStats();
+
+}
+
+
+/* =====================================================
+   ADD STATION
+===================================================== */
+
+document
+.getElementById("stationForm")
+.addEventListener(
+  "submit",
+  function(event){
+
+    event.preventDefault();
+
+    const station = {
+
+      name:
+        document
+        .getElementById("stationName")
+        .value.trim(),
+
+      country:
+        document
+        .getElementById("stationCountry")
+        .value.trim(),
+
+      language:
+        document
+        .getElementById("stationLanguage")
+        .value.trim(),
+
+      format:
+        document
+        .getElementById("stationFormat")
+        .value,
+
+      url:
+        document
+        .getElementById("stationUrl")
+        .value.trim()
+
+    };
+
+
+    stations.push(station);
+
+    saveStations();
+
+    renderStations();
+
+    this.reset();
+
+    hideSection("addStationSection");
+
+  }
+);
+
+
+/* =====================================================
+   PLAY STATION
+===================================================== */
+
+function playStation(index){
+
+  const station =
+    stations[index];
+
+  if(!station) return;
+
+  // JON FM always uses the platform's live backend stream.
+  if(station.name === "JON FM ETHIOPIA"){
+    station.url = BACKEND_URL + "/jonfm";
+  }
+
+  if(currentAudio){
+
+    currentAudio.pause();
+
+    currentAudio.src = "";
+
+  }
+
+
+  currentAudio =
+    new Audio(station.url);
+
+  currentAudio.preload = "none";
+
+  currentStation = index;
+
+
+  currentAudio
+    .play()
+    .then(()=>{
+
+      setStationStatus(index,true);
+
+      document
+        .getElementById("nowPlaying")
+        .textContent =
+          station.name;
+
+      document
+        .getElementById("nextSong")
+        .textContent =
+          "Next: Live Station Stream";
+
+    })
+    .catch(()=>{
+
+      setStationStatus(index,false);
+
+      alert(
+        "Stream could not be played. Check the URL and browser support."
+      );
+
+    });
+
+}
+
+
+/* =====================================================
+   STOP STATION
+===================================================== */
+
+function stopStation(index){
+
+  if(
+    currentAudio &&
+    currentStation === index
+  ){
+
+    currentAudio.pause();
+
+    currentAudio.src = "";
+
+    currentAudio = null;
+
+    currentStation = null;
+
+  }
+
+  setStationStatus(index,false);
+
+}
+
+
+function setStationStatus(index,online){
+
+  const status =
+    document.getElementById(
+      "stationStatus-"+index
+    );
+
+  if(!status) return;
+
+
+  if(online){
+
+    status.textContent = "ONLINE";
+
+    status.className =
+      "status online";
+
+  }else{
+
+    status.textContent = "OFFLINE";
+
+    status.className =
+      "status offline";
+
+  }
+
+  updateStats();
+
+}
+
+
+/* =====================================================
+   DELETE STATION
+===================================================== */
+
+function deleteStation(index){
+
+  const station =
+    stations[index];
+
+  if(!station) return;
+
+
+  if(
+    !confirm(
+      "Delete " +
+      station.name +
+      "?"
+    )
+  ){
+
+    return;
+
+  }
+
+
+  if(currentStation === index){
+
+    stopStation(index);
+
+  }
+
+
+  stations.splice(index,1);
+
+  saveStations();
+
+  renderStations();
+
+}
+
+
+/* =====================================================
+   MUSIC UPLOAD
+===================================================== */
+
+document
+.getElementById("musicUpload")
+.addEventListener(
+  "change",
+  async function(){
+
+    const files =
+      Array.from(this.files || []);
+
+    if(!files.length) return;
+
+    const formData = new FormData();
+
+    files.forEach(file=>{
+      const type = (file.type || "").toLowerCase();
+      const name = file.name.toLowerCase();
+
+      if(
+        type === "audio/mpeg" ||
+        type === "audio/wav" ||
+        type === "audio/x-wav" ||
+        type === "audio/wave" ||
+        name.endsWith(".mp3") ||
+        name.endsWith(".wav") ||
+        name.endsWith(".m4a")
+      ){
+        formData.append("music", file);
+      }
+    });
+
+    try{
+
+      const response = await fetch(
+        BACKEND_URL + "/api/music/upload",
+        {
+          method:"POST",
+          body:formData
+        }
+      );
+
+      const result = await response.json();
+
+      if(!response.ok){
+        throw new Error(result.error || "Upload failed.");
+      }
+
+      await loadServerMusic();
+
+      alert(
+        result.message ||
+        "Music uploaded successfully."
+      );
+
+    }catch(error){
+
+      alert(
+        "Music upload failed: " +
+        (error.message || "Check the JON Radio backend connection.")
+      );
+
+    }
+
+    this.value = "";
+
+  }
+);
+
+
+/* =====================================================
+   LOAD SERVER MUSIC
+===================================================== */
+
+async function loadServerMusic(){
+
+  try{
+
+    const response = await fetch(
+      BACKEND_URL + "/api/music",
+      {cache:"no-store"}
+    );
+
+    if(!response.ok) return;
+
+    const serverMusic = await response.json();
+
+    musicLibrary = serverMusic.map(music=>({
+      id:"server-" + music.name,
+      name:music.name,
+      type:"audio",
+      size:music.size,
+      url:music.url,
+      server:true
+    }));
+
+    saveMusic();
+    renderMusic();
+    updateStats();
+
+  }catch(error){
+
+    console.log(
+      "JON MUSIC SERVER:",
+      error.message
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   MUSIC LIBRARY
+===================================================== */
+
+function renderMusic(){
+
+  const box =
+    document.getElementById(
+      "musicLibrary"
+    );
+
+  box.innerHTML = "";
+
+
+  if(musicLibrary.length === 0){
+
+    box.innerHTML =
+      '<div class="empty">No music uploaded yet.</div>';
+
+    return;
+
+  }
+
+
+  musicLibrary.forEach((music,index)=>{
+
+    const item =
+      document.createElement("div");
+
+    item.className =
+      "music-item";
+
+    item.innerHTML = `
+
+      <div class="music-info">
+
+        <strong>
+          🎵 ${escapeHTML(music.name)}
+        </strong>
+
+        <small>
+          ${formatBytes(music.size)}
+        </small>
+
+      </div>
+
+      <div class="music-actions">
+
+        <button
+          class="light"
+          onclick="addToPlaylist(${index})">
+          + Playlist
+        </button>
+
+        <button
+          class="danger"
+          onclick="deleteMusic(${index})">
+          Delete
+        </button>
+
+      </div>
+
+    `;
+
+    box.appendChild(item);
+
+  });
+
+}
+
+
+function formatBytes(bytes){
+
+  if(!bytes) return "Unknown size";
+
+  const mb =
+    bytes / 1024 / 1024;
+
+  return mb.toFixed(2) + " MB";
+
+}
+
+
+function deleteMusic(index){
+
+  if(
+    !confirm(
+      "Delete this music from the library?"
+    )
+  ){
+
+    return;
+
+  }
+
+
+  musicLibrary.splice(index,1);
+
+  saveMusic();
+
+  renderMusic();
+
+  updateStats();
+
+}
+
+
+/* =====================================================
+   PLAYLIST
+===================================================== */
+
+function addToPlaylist(index){
+
+  const music =
+    musicLibrary[index];
+
+  if(!music) return;
+
+
+  playlist.push({
+
+    id:music.id,
+
+    name:music.name
+
+  });
+
+
+  savePlaylist();
+
+  renderPlaylist();
+
+}
+
+
+function buildPlaylist(){
+
+  playlist =
+    musicLibrary.map(music=>({
+
+      id:music.id,
+
+      name:music.name
+
+    }));
+
+
+  savePlaylist();
+
+  renderPlaylist();
+
+}
+
+
+function renderPlaylist(){
+
+  const box =
+    document.getElementById(
+      "playlist"
+    );
+
+  box.innerHTML = "";
+
+
+  if(playlist.length === 0){
+
+    box.innerHTML =
+      '<div class="empty">Playlist is empty.</div>';
+
+    return;
+
+  }
+
+
+  playlist.forEach((song,index)=>{
+
+    const item =
+      document.createElement("div");
+
+    item.className =
+      "playlist-item";
+
+    item.innerHTML = `
+
+      <div style="
+        display:flex;
+        align-items:center;
+        gap:10px;
+        flex:1;
+      ">
+
+        <span class="playlist-number">
+          ${index+1}
+        </span>
+
+        <strong>
+          ${escapeHTML(song.name)}
+        </strong>
+
+      </div>
+
+      <button
+        class="danger"
+        onclick="removePlaylist(${index})">
+        Remove
+      </button>
+
+    `;
+
+    box.appendChild(item);
+
+  });
+
+}
+
+
+function removePlaylist(index){
+
+  playlist.splice(index,1);
+
+  savePlaylist();
+
+  renderPlaylist();
+
+}
+
+
+/* =====================================================
+   AUTO DJ
+===================================================== */
+
+async function toggleAutoDJ(){
+
+  if(autoDJ){
+    await stopAutoDJ();
+    return;
+  }
+
+  if(liveMode){
+    alert("Live microphone is active. Stop Live first.");
+    return;
+  }
+
+  try{
+    const response = await fetch(
+      BACKEND_URL + "/api/autodj/start",
+      {method:"POST"}
+    );
+    const result = await response.json();
+
+    if(!response.ok || !result.success){
+      throw new Error(result.error || "Auto DJ could not start.");
+    }
+
+    autoDJ = true;
+    updateBroadcastUI();
+    await refreshBackendStatus();
+
+  }catch(error){
+    alert("Auto DJ could not start: " + (error.message || "Check the backend connection."));
+  }
+}
+
+
+async function stopAutoDJ(){
+
+  try{
+    const response = await fetch(
+      BACKEND_URL + "/api/autodj/stop",
+      {method:"POST"}
+    );
+    const result = await response.json();
+
+    if(!response.ok || !result.success){
+      throw new Error(result.error || "Auto DJ could not stop.");
+    }
+
+  }catch(error){
+    console.log("JON AUTO DJ STOP:", error.message);
+  }
+
+  autoDJ = false;
+  updateBroadcastUI();
+}
+
+
+async function refreshBackendStatus(){
+
+  try{
+    const response = await fetch(
+      BACKEND_URL + "/api/status",
+      {cache:"no-store"}
+    );
+
+    if(!response.ok) return;
+
+    const status = await response.json();
+
+    autoDJ = !!status.autoDJ;
+    liveMode = !!status.live;
+
+    updateBroadcastUI();
+
+  }catch(error){
+    console.log("JON STATUS:", error.message);
+  }
+}
+
+
+/* =====================================================
+   ADVANCED AUTO DJ CONTROLS
+===================================================== */
+async function postDJ(path, body={}){
+  const headers={"Content-Type":"application/json"};
+  const token=sessionStorage.getItem("jonRadioAdminSession") || authToken;
+  if(token) headers.Authorization="Bearer "+token;
+
+  const base=String(BACKEND_URL||"").replace(/\\/$/,"");
+  const url=base+path;
+
+  const response=await fetch(url,{
+    method:"POST",
+    headers,
+    body:JSON.stringify(body),
+    cache:"no-store"
+  });
+
+  const text=await response.text();
+
+  if(response.status===401){
+    logoutAdmin(false);
+    throw new Error("Admin session expired. Please log in again.");
+  }
+
+  let result;
+  try{
+    result=JSON.parse(text);
+  }catch{
+    const preview=text.replace(/\\s+/g," ").slice(0,180);
+    throw new Error("Auto DJ API returned HTTP "+response.status+" instead of JSON. "+(preview||"Empty response."));
+  }
+
+  if(!response.ok || result.success===false){
+    throw new Error(result.error||"Auto DJ request failed.");
+  }
+
+  if(result.status) applyDJStatus(result.status);
+  return result;
+}
+function applyDJStatus(s){
+  if(!s) return;
+  autoDJ=!!s.autoDJ; liveMode=!!s.live;
+  const now=document.getElementById("nowPlaying"); const next=document.getElementById("nextSong");
+  if(now && s.nowPlaying) now.textContent="🎵 "+s.nowPlaying;
+  if(next) next.textContent="Next: "+(s.nextSong||"—");
+  const ad=document.getElementById("adCount"); if(ad) ad.textContent=(s.adCount||0)+" ADS";
+  const j=document.getElementById("jingleCount"); if(j) j.textContent=s.jingleCount||0;
+  updateBroadcastUI();
+}
+async function autoDJNext(){try{await postDJ("/api/autodj/next")}catch(e){alert(e.message)}}
+async function autoDJPrevious(){try{await postDJ("/api/autodj/previous")}catch(e){alert(e.message)}}
+async function clearDJQueue(){try{await postDJ("/api/autodj/queue/clear")}catch(e){alert(e.message)}}
+async function saveDJSettings(){
+  try{await postDJ("/api/autodj/settings",{shuffle:document.getElementById("djShuffle").value==="true",repeat:document.getElementById("djRepeat").value==="true",crossfadeSeconds:Number(document.getElementById("djCrossfade").value),adIntervalMinutes:Number(document.getElementById("djAdInterval").value)});}
+  catch(e){alert(e.message)}
+}
+async function loadDJHistory(){
+  try{const r=await fetch(BACKEND_URL+"/api/autodj/history",{cache:"no-store"});const d=await r.json();document.getElementById("djHistory").innerHTML=(d.history||[]).map(x=>"• "+escapeHTML(x.item)).join("<br>")||"No play history yet.";}catch(e){alert(e.message)}
+}
+async function loadDJMedia(){
+  try{const r=await fetch(BACKEND_URL+"/api/autodj/media",{cache:"no-store"});const d=await r.json();
+    document.getElementById("adCount").textContent=(d.ads||[]).length+" ADS"; document.getElementById("jingleCount").textContent=(d.jingles||[]).length;
+    document.getElementById("adLibrary").innerHTML=(d.ads||[]).map(x=>'<div class="music-item"><strong>📢 '+escapeHTML(x)+'</strong></div>').join("")||'<div class="empty">No advertisements uploaded.</div>';
+    document.getElementById("jingleLibrary").innerHTML=(d.jingles||[]).map(x=>'<div class="music-item"><strong>🎙️ '+escapeHTML(x)+'</strong></div>').join("")||'<div class="empty">No jingles uploaded.</div>';
+  }catch(e){console.log("MEDIA:",e.message)}
+}
+async function uploadDJMedia(inputId,url){
+  const input=document.getElementById(inputId); const files=Array.from(input.files||[]); if(!files.length)return;
+  const fd=new FormData(); files.forEach(f=>fd.append(inputId==="adUpload"?"ads":"jingles",f));
+  try{const r=await fetch(BACKEND_URL+url,{method:"POST",body:fd});const d=await r.json();if(!r.ok||!d.success)throw new Error(d.error||"Upload failed.");await loadDJMedia();alert(d.message||"Uploaded.");}catch(e){alert("Upload failed: "+e.message)}input.value="";
+}
+document.getElementById("adUpload").addEventListener("change",()=>uploadDJMedia("adUpload","/api/ads/upload"));
+document.getElementById("jingleUpload").addEventListener("change",()=>uploadDJMedia("jingleUpload","/api/jingles/upload"));
+
+/* =====================================================
+   LIVE MICROPHONE
+===================================================== */
+
+async function startLive(){
+  if(liveMode) return;
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){
+    alert("This browser does not support Live microphone recording.");
+    return;
+  }
+  try{
+    microphoneStream=await navigator.mediaDevices.getUserMedia({
+      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
+    });
+    liveSocket=new WebSocket(websocketUrl("/live-mic"));
+    liveSocket.binaryType="arraybuffer";
+    liveSocket.onopen=()=>{
+      try{
+        microphoneRecorder=new MediaRecorder(microphoneStream,{mimeType:"audio/webm;codecs=opus"});
+      }catch(error){
+        microphoneRecorder=new MediaRecorder(microphoneStream);
+      }
+      microphoneRecorder.ondataavailable=e=>{
+        if(e.data.size>0 && liveSocket && liveSocket.readyState===WebSocket.OPEN) liveSocket.send(e.data);
+      };
+      microphoneRecorder.onerror=()=>{ alert("Live microphone recording error."); stopLive(); };
+      microphoneRecorder.start(250);
+      liveMode=true;
+      autoDJ=false;
+      updateBroadcastUI();
+      document.getElementById("liveText").textContent="Microphone is ON — LIVE to JON FM";
+    };
+    liveSocket.onclose=()=>{
+      if(liveMode){
+        liveMode=false;
+        microphoneRecorder=null;
+        updateBroadcastUI();
+        document.getElementById("liveText").textContent="Live connection closed";
+      }
+    };
+    liveSocket.onerror=()=>{
+      alert("Could not connect to the JON Radio live server.");
+      stopLive();
+    };
+  }catch(error){
+    if(microphoneStream){ microphoneStream.getTracks().forEach(t=>t.stop()); microphoneStream=null; }
+    alert("Microphone permission was not granted.");
+  }
+}
+
+function stopLive(){
+  if(microphoneRecorder){
+    try{ if(microphoneRecorder.state!=="inactive") microphoneRecorder.stop(); }catch(error){}
+    microphoneRecorder=null;
+  }
+  if(liveSocket){ try{ liveSocket.close(); }catch(error){} liveSocket=null; }
+  if(microphoneStream){ microphoneStream.getTracks().forEach(t=>t.stop()); microphoneStream=null; }
+  liveMode=false;
+  updateBroadcastUI();
+  document.getElementById("liveText").textContent="Microphone is OFF";
+}
+
+
+
+/* =====================================================
+   BROADCAST UI
+===================================================== */
+
+function updateBroadcastUI(){
+
+  const broadcast =
+    liveMode || autoDJ;
+
+
+  const badge =
+    document.getElementById(
+      "broadcastBadge"
+    );
+
+
+  const status =
+    document.getElementById(
+      "broadcastStatus"
+    );
+
+
+  const setting =
+    document.getElementById(
+      "settingBroadcast"
+    );
+
+
+  const liveStatus =
+    document.getElementById(
+      "liveStatus"
+    );
+
+
+  const autoStatus =
+    document.getElementById(
+      "autoDJStatus"
+    );
+
+
+  if(liveMode){
+
+    badge.innerHTML =
+      '<span class="dot"></span> LIVE';
+
+    status.textContent =
+      "LIVE";
+
+    setting.textContent =
+      "LIVE";
+
+    setting.className =
+      "status online";
+
+    liveStatus.textContent =
+      "LIVE";
+
+    liveStatus.className =
+      "status online";
+
+    autoStatus.textContent =
+      "PAUSED";
+
+    autoStatus.className =
+      "status offline";
+
+    document
+      .getElementById("nowPlaying")
+      .textContent =
+        "🎙️ JON FM LIVE";
+
+    document
+      .getElementById("nextSong")
+      .textContent =
+        "Live microphone is active";
+
+  }else if(autoDJ){
+
+    badge.innerHTML =
+      '<span class="dot"></span> AUTO DJ';
+
+    status.textContent =
+      "ON";
+
+    setting.textContent =
+      "AUTO DJ";
+
+    setting.className =
+      "status online";
+
+    liveStatus.textContent =
+      "OFFLINE";
+
+    liveStatus.className =
+      "status offline";
+
+    autoStatus.textContent =
+      "ON";
+
+    autoStatus.className =
+      "status online";
+
+    document
+      .getElementById("nowPlaying")
+      .textContent =
+        "🤖 JON FM Auto DJ";
+
+    document
+      .getElementById("nextSong")
+      .textContent =
+        "Next: Playlist";
+
+  }else{
+
+    badge.innerHTML =
+      '<span class="dot"></span> OFFLINE';
+
+    status.textContent =
+      "OFF";
+
+    setting.textContent =
+      "OFFLINE";
+
+    setting.className =
+      "status offline";
+
+    liveStatus.textContent =
+      "OFFLINE";
+
+    liveStatus.className =
+      "status offline";
+
+    autoStatus.textContent =
+      "OFF";
+
+    autoStatus.className =
+      "status offline";
+
+    document
+      .getElementById("nowPlaying")
+      .textContent =
+        "Nothing Playing";
+
+    document
+      .getElementById("nextSong")
+      .textContent =
+        "Next: —";
+
+  }
+
+
+  document
+    .getElementById("autoDJButton")
+    .textContent =
+      autoDJ
+        ? "⏸ Auto DJ Running"
+        : "▶ Start Auto DJ";
+
+  updateStats();
+
+}
+
+
+/* =====================================================
+   STATS
+===================================================== */
+
+function updateStats(){
+
+  document
+    .getElementById("stationCount")
+    .textContent =
+      stations.length;
+
+
+  let online = 0;
+
+
+  stations.forEach((station,index)=>{
+
+    const status =
+      document.getElementById(
+        "stationStatus-"+index
+      );
+
+
+    if(
+      status &&
+      status.classList.contains("online")
+    ){
+
+      online++;
+
+    }
+
+  });
+
+
+  document
+    .getElementById("onlineCount")
+    .textContent =
+      online;
+
+
+  document
+    .getElementById("musicCount")
+    .textContent =
+      musicLibrary.length;
+
+
+  document
+    .getElementById("listenerCount")
+    .textContent =
+      "0";
+
+
+  document
+    .getElementById("broadcastStatus")
+    .textContent =
+      liveMode
+        ? "LIVE"
+        : autoDJ
+          ? "ON"
+          : "OFF";
+
+}
+
+
+/* =====================================================
+   BROADCAST MODE
+===================================================== */
+
+document
+.getElementById("broadcastMode")
+.addEventListener(
+  "change",
+  function(){
+
+    if(this.value === "live"){
+
+      stopAutoDJ();
+
+    }else{
+
+      stopLive();
+
+    }
+
+  }
+);
+
+
+/* =====================================================
+   DEFAULT JON FM STATION
+===================================================== */
+
+if(stations.length === 0){
+
+  stations.push({
+
+    name:"JON FM ETHIOPIA",
+
+    country:"Ethiopia",
+
+    language:"Amharic",
+
+    format:"AAC",
+
+    url:""
+
+  });
+
+  saveStations();
+
+}
+
+
+/* =====================================================
+   INITIALIZE
+===================================================== */
+
+async function initializeAdmin(){
+  await checkAdminSession();
+
+  if(!document.body.classList.contains("authenticated")){
+    return;
+  }
+
+  await loadServerMusic();
+  await refreshBackendStatus();
+
+  renderStations();
+  renderMusic();
+  renderPlaylist();
+  await loadDJMedia();
+  updateBroadcastUI();
+}
+
+initializeAdmin();
+
+
+</script>
+
+</body>
+</html>
