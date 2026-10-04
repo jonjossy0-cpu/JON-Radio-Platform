@@ -514,7 +514,7 @@ body.authenticated #lockButton{display:inline-block !important;}
     <div class="login-logo">🔐</div>
     <h2 id="loginTitle">JON RADIO PLATFORM</h2>
     <p>Admin Login</p>
-    <form id="loginForm" onsubmit="return loginAdmin(event)">
+    <form id="loginForm" onsubmit="loginAdmin(event); return false;">
       <label for="adminPassword">Password</label>
       <input id="adminPassword" type="password" autocomplete="current-password" required
              style="width:100%;padding:12px;border:1px solid #d0d5dd;border-radius:9px;margin:8px 0;">
