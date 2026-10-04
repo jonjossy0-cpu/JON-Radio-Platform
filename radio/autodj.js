@@ -1,6 +1,6 @@
 const{spawn}=require("child_process");const fs=require("fs"),path=require("path");const broadcast=require("./broadcast");
 const MUSIC=path.join(__dirname,"..","music"),ADS=path.join(__dirname,"..","ads");let FFMPEG_PATH="ffmpeg";try{FFMPEG_PATH=require("ffmpeg-static")||FFMPEG_PATH}catch{}
-let running=false,paused=false,live=false,proc=null,playlist=[],queue=[],index=0,now=null,next=null,previous=null,shuffle=false,repeat=false,crossfade=0,gain=0,adInterval=0,lastAd=0,adTimes=[];let generation=0;
+let running=false,paused=false,live=false,wasRunningBeforeLive=false,proc=null,playlist=[],queue=[],index=0,now=null,next=null,previous=null,shuffle=false,repeat=false,crossfade=0,gain=0,adInterval=0,lastAd=0,adTimes=[];let generation=0;
 function files(){try{return fs.readdirSync(MUSIC).filter(x=>[".mp3",".wav",".m4a"].includes(path.extname(x).toLowerCase()))}catch{return[]}}
 function load(){const f=files();playlist=playlist.filter(x=>f.includes(x));if(!playlist.length)playlist=f;return playlist.length>0}
 function item(name){return{name,filePath:path.join(MUSIC,name)}}
@@ -10,8 +10,8 @@ function playOne(song,g){if(!song)return;proc=spawn(FFMPEG_PATH,["-hide_banner",
 function advance(){if(!running||paused||live)return;if(!load())return;const song=choose();if(!song)return;previous=now;now=song.name;next=playlist.length>1?playlist[index]:null;const g=generation;playOne(song,g)}
 function startAutoDJ(){if(live||running)return running;if(!load()||!broadcast.start("autodj"))return false;running=true;paused=false;lastAd=Date.now();advance();return true}
 function stopAutoDJ(){running=false;paused=false;terminate();broadcast.stop("autodj");now=null;next=null;return true}
-function startLive(){if(live)return true;if(running){terminate();broadcast.stop("autodj")}if(!broadcast.start("live"))return false;live=true;return true}
-function stopLive(){if(!live)return true;live=false;broadcast.stop("live");if(running&&!paused){if(broadcast.start("autodj")){setTimeout(advance,100)}}return true}
+function startLive(){if(live)return true;wasRunningBeforeLive=running;if(running){running=false;terminate();broadcast.stop("autodj")}if(!broadcast.start("live")){if(wasRunningBeforeLive){running=true;broadcast.start("autodj");setTimeout(advance,100)}return false}live=true;return true}
+function stopLive(){if(!live)return true;live=false;broadcast.stop("live");if(wasRunningBeforeLive&&!paused){running=true;if(broadcast.start("autodj"))setTimeout(advance,100)}wasRunningBeforeLive=false;return true}
 function nextSong(){if(!running||live)return false;terminate();const s=choose();if(!s)return false;previous=now;now=s.name;next=playlist[index]||null;playOne(s,generation);return true}
 function previousSong(){if(!running||live||!previous)return false;terminate();queue.unshift(now);const s=item(previous);now=s.name;playOne(s,generation);return true}
 function setPlaylist(v){if(!Array.isArray(v))return false;const f=files();playlist=[...new Set(v.map(x=>path.basename(String(x))).filter(x=>f.includes(x)))];if(!playlist.length)playlist=f;index=0;return true}
