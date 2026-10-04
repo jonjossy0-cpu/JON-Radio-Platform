@@ -979,6 +979,7 @@ function setLoginError(message){
 
 async function loginAdmin(event){
   event.preventDefault();
+
   const passwordInput = document.getElementById("adminPassword");
   const password = passwordInput.value;
   setLoginError("");
@@ -993,19 +994,27 @@ async function loginAdmin(event){
       BACKEND_URL + "/api/auth/login",
       {
         method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({password}),
+        headers:{
+          "Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"
+        },
+        body:new URLSearchParams({password}),
         cache:"no-store"
       }
     );
 
     const text = await response.text();
     let result;
+
     try{
       result = JSON.parse(text);
     }catch{
       const preview = text.replace(/\s+/g," ").slice(0,180);
-      throw new Error("Login server returned HTTP " + response.status + ". " + (preview || "No response."));
+      throw new Error(
+        "Login server returned HTTP " +
+        response.status +
+        ". " +
+        (preview || "No response.")
+      );
     }
 
     if(!response.ok || !result.success){
@@ -1021,6 +1030,8 @@ async function loginAdmin(event){
     localStorage.removeItem(DASHBOARD_LOCK_KEY);
     document.body.classList.add("authenticated");
     setLoginError("");
+
+    // Clear the password only after successful authentication.
     passwordInput.value = "";
 
     try{
@@ -1035,7 +1046,9 @@ async function loginAdmin(event){
     }catch(loadError){
       console.warn("Dashboard refresh after login failed:", loadError);
     }
+
   }catch(error){
+    // Keep the password visible on failed login so the error can be corrected.
     setLoginError(error.message || "Login failed.");
   }
 }
