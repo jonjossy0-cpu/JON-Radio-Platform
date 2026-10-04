@@ -1017,7 +1017,6 @@ async function loginAdmin(event){
     setLoginError(error.message || "Login failed.");
   }
 }
-
 async function checkAdminSession(){
   if(localStorage.getItem(DASHBOARD_LOCK_KEY) === "1"){
     authToken = "";
