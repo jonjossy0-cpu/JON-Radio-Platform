@@ -1526,7 +1526,8 @@ document
         type === "audio/x-wav" ||
         type === "audio/wave" ||
         name.endsWith(".mp3") ||
-        name.endsWith(".wav")
+        name.endsWith(".wav") ||
+        name.endsWith(".m4a")
       ){
         formData.append("music", file);
       }
@@ -1558,7 +1559,8 @@ document
     }catch(error){
 
       alert(
-        "Music upload failed. Check the JON Radio backend connection."
+        "Music upload failed: " +
+        (error.message || "Check the JON Radio backend connection.")
       );
 
     }
