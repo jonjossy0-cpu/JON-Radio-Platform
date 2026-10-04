@@ -254,7 +254,7 @@ function mediaUpload(dir, fieldName) {
       destination: (req, file, cb) => cb(null, dir),
       filename: (req, file, cb) => {
         const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
-        cb(null, \`\${Date.now()}-\${safeName}\`);
+        cb(null, `${Date.now()}-${safeName}`);
       }
     }),
     limits: { fileSize: 50 * 1024 * 1024 },
