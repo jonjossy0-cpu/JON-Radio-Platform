@@ -21,6 +21,117 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// =====================================
+// JON RADIO PLATFORM ADMIN AUTH
+// Password is stored only in Render Environment Variables.
+// =====================================
+
+const crypto = require("crypto");
+
+const ADMIN_PASSWORD = process.env.JON_ADMIN_PASSWORD || "";
+const SESSION_SECRET =
+  process.env.JON_ADMIN_SESSION_SECRET ||
+  (ADMIN_PASSWORD ? crypto.createHash("sha256").update(ADMIN_PASSWORD).digest("hex") : "");
+
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+
+function signSession(payload) {
+  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const signature = crypto
+    .createHmac("sha256", SESSION_SECRET)
+    .update(body)
+    .digest("base64url");
+  return body + "." + signature;
+}
+
+function verifySession(token) {
+  if (!token || !SESSION_SECRET) return false;
+
+  const parts = token.split(".");
+  if (parts.length !== 2) return false;
+
+  const [body, signature] = parts;
+  const expected = crypto
+    .createHmac("sha256", SESSION_SECRET)
+    .update(body)
+    .digest("base64url");
+
+  const a = Buffer.from(signature);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return false;
+
+  try {
+    const payload = JSON.parse(
+      Buffer.from(body, "base64url").toString("utf8")
+    );
+
+    return payload.exp > Date.now();
+  } catch {
+    return false;
+  }
+}
+
+function requireAdmin(req, res, next) {
+  const auth = req.headers.authorization || "";
+  const token = auth.startsWith("Bearer ")
+    ? auth.slice(7).trim()
+    : "";
+
+  if (!verifySession(token)) {
+    return res.status(401).json({
+      success: false,
+      error: "Admin login required."
+    });
+  }
+
+  next();
+}
+
+app.post("/api/auth/login", (req, res) => {
+  if (!ADMIN_PASSWORD) {
+    return res.status(503).json({
+      success: false,
+      error: "Admin password is not configured on the server."
+    });
+  }
+
+  const password = String(req.body?.password || "");
+
+  const provided = Buffer.from(password);
+  const expected = Buffer.from(ADMIN_PASSWORD);
+
+  const valid =
+    provided.length === expected.length &&
+    crypto.timingSafeEqual(provided, expected);
+
+  if (!valid) {
+    return res.status(401).json({
+      success: false,
+      error: "Incorrect password."
+    });
+  }
+
+  const token = signSession({
+    iat: Date.now(),
+    exp: Date.now() + SESSION_TTL_MS
+  });
+
+  res.json({
+    success: true,
+    token,
+    expiresIn: SESSION_TTL_MS
+  });
+});
+
+app.get("/api/auth/check", requireAdmin, (req, res) => {
+  res.json({ success: true, authenticated: true });
+});
+
+// All /api routes below this point are admin-protected.
+// Public update metadata, when present, is intentionally defined before this guard.
+app.use("/api", requireAdmin);
+
+
 // GitHub Pages frontend connection
 app.use((req, res, next) => {
   const origin = req.headers.origin;
