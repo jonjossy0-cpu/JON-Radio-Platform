@@ -1897,6 +1897,14 @@ function removePlaylist(index){
   playlist.splice(index,1);
   savePlaylist();
   renderPlaylist();
+  syncPlaylist();
+}
+
+async function syncPlaylist(){
+  try{
+    const r=await fetch(BACKEND_URL+"/api/autodj/playlist",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({playlist:playlist.map(x=>x.name)})});
+    if(!r.ok) console.warn("Playlist sync failed");
+  }catch(e){ console.warn("Playlist sync failed:",e.message); }
 }
 
 
