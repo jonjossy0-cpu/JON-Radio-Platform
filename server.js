@@ -118,6 +118,9 @@ function requireAdmin(req, res, next) {
 }
 
 app.post("/api/auth/login", (req, res) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  res.setHeader("Pragma", "no-cache");
+
   if (!ADMIN_PASSWORD) {
     return res.status(503).json({
       success: false,
