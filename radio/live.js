@@ -1,4 +1,9 @@
 const { spawn } = require("child_process");
+let FFMPEG_PATH = "ffmpeg";
+try {
+  const ffmpegStatic = require("ffmpeg-static");
+  if (ffmpegStatic) FFMPEG_PATH = ffmpegStatic;
+} catch {}
 const stream = require("./stream");
 
 let ffmpegProcess = null;
@@ -8,7 +13,7 @@ function start() {
   if (active) return true;
   if (!stream.startLiveBroadcast()) return false;
 
-  ffmpegProcess = spawn("ffmpeg", [
+  ffmpegProcess = spawn(FFMPEG_PATH, [
     "-f","webm","-i","pipe:0",
     "-vn","-ac","2","-ar","44100",
     "-b:a","128k","-f","mp3","pipe:1"
