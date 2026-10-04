@@ -979,76 +979,41 @@ function setLoginError(message){
 
 async function loginAdmin(event){
   event.preventDefault();
-
-  const passwordInput = document.getElementById("adminPassword");
-  const password = passwordInput.value;
+  const password = document.getElementById("adminPassword").value;
   setLoginError("");
-
-  if(!password){
-    setLoginError("Please enter the admin password.");
-    return;
-  }
 
   try{
     const response = await nativeFetch(
       BACKEND_URL + "/api/auth/login",
       {
         method:"POST",
-        headers:{
-          "Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"
-        },
-        body:new URLSearchParams({password}),
-        cache:"no-store"
+        headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},
+        body:new URLSearchParams({password})
       }
     );
 
-    const text = await response.text();
-    let result;
-
-    try{
-      result = JSON.parse(text);
-    }catch{
-      const preview = text.replace(/\s+/g," ").slice(0,180);
-      throw new Error(
-        "Login server returned HTTP " +
-        response.status +
-        ". " +
-        (preview || "No response.")
-      );
-    }
+    const result = await response.json();
 
     if(!response.ok || !result.success){
       throw new Error(result.error || "Login failed.");
     }
 
-    if(!result.token){
-      throw new Error("Login succeeded, but no admin session was returned.");
-    }
-
     authToken = result.token;
     sessionStorage.setItem(AUTH_TOKEN_KEY, authToken);
     localStorage.removeItem(DASHBOARD_LOCK_KEY);
+    document.getElementById("adminPassword").value = "";
     document.body.classList.add("authenticated");
     setLoginError("");
 
-    // Clear the password only after successful authentication.
-    passwordInput.value = "";
-
-    try{
-      await Promise.all([
-        loadServerMusic(),
-        refreshBackendStatus()
-      ]);
-      renderStations();
-      renderMusic();
-      renderPlaylist();
-      updateBroadcastUI();
-    }catch(loadError){
-      console.warn("Dashboard refresh after login failed:", loadError);
-    }
-
+    await Promise.all([
+      loadServerMusic(),
+      refreshBackendStatus()
+    ]);
+    renderStations();
+    renderMusic();
+    renderPlaylist();
+    updateBroadcastUI();
   }catch(error){
-    // Keep the password visible on failed login so the error can be corrected.
     setLoginError(error.message || "Login failed.");
   }
 }
