@@ -488,6 +488,18 @@ body.authenticated #logoutButton{display:inline-block !important;}
   }
 
 }
+
+/* DASHBOARD LOCK */
+#dashboardLock{
+  position:fixed;inset:0;z-index:9998;display:none;align-items:center;justify-content:center;
+  background:rgba(15,23,42,.72);padding:20px;
+}
+body.dashboard-locked #dashboardLock{display:flex;}
+.lock-card{width:min(390px,100%);background:#fff;border-radius:18px;padding:28px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.lock-card h2{color:#0b63ce;margin:8px 0}.lock-card p{color:#667085;margin-bottom:18px}
+.lock-card button{width:100%;margin-top:8px}.lock-error{color:#b91c1c;background:#fee2e2;padding:10px;border-radius:9px;margin-top:10px;font-size:13px}
+body.dashboard-locked header,body.dashboard-locked .container,body.dashboard-locked footer{pointer-events:none;user-select:none}
+body.dashboard-locked #dashboardLock{pointer-events:auto}
 </style>
 </head>
 
@@ -507,6 +519,16 @@ body.authenticated #logoutButton{display:inline-block !important;}
   </div>
 </div>
 
+
+<div id="dashboardLock">
+  <div class="lock-card">
+    <div style="font-size:42px">🔒</div>
+    <h2>Dashboard Locked</h2>
+    <p>Broadcasting continues in the background.</p>
+    <button class="primary" onclick="unlockDashboard()">🔓 Unlock</button>
+    <div id="lockError" class="lock-error hidden"></div>
+  </div>
+</div>
 <header>
   <h1>JON RADIO PLATFORM</h1>
   <p>Multi-Radio Management & 24/7 Broadcasting Platform</p>
@@ -1009,6 +1031,37 @@ async function checkAdminSession(){
 }
 
 document.getElementById("loginForm").addEventListener("submit", loginAdmin);
+
+
+
+/* =====================================================
+   DASHBOARD LOCK
+===================================================== */
+let dashboardLocked = false;
+function lockDashboard(){
+  dashboardLocked = true;
+  document.body.classList.add("dashboard-locked");
+}
+async function unlockDashboard(){
+  const password = window.prompt("Enter Admin Password to unlock:");
+  if(password === null) return;
+  try{
+    const response = await nativeFetch(BACKEND_URL + "/api/auth/login",{
+      method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password})
+    });
+    const result = await response.json();
+    if(!response.ok || !result.success) throw new Error(result.error || "Incorrect password.");
+    authToken = result.token;
+    sessionStorage.setItem(AUTH_TOKEN_KEY, authToken);
+    dashboardLocked = false;
+    document.body.classList.remove("dashboard-locked");
+    setLoginError("");
+  }catch(error){
+    const box=document.getElementById("lockError");
+    box.textContent=error.message || "Unlock failed.";
+    box.classList.remove("hidden");
+  }
+}
 
 /* =====================================================
    STORAGE
