@@ -534,7 +534,7 @@ app.post(
         success: false,
         error: musicFiles.length
           ? "Auto DJ could not start because the stream is busy or another broadcast source is active."
-          : "No MP3/WAV file is available on the server. Upload music again after the latest Render deploy.",
+          : "No MP3/WAV/M4A file is available on the server. Upload music again after the latest Render deploy.",
         musicCount: musicFiles.length,
         stream: stream.getStatus(),
         autoDJ: autoDJ.getStatus()
