@@ -428,7 +428,7 @@ footer{
   font-size:13px;
 }
 body.authenticated #loginGate{display:none !important;}
-body.authenticated #logoutButton{display:inline-block !important;}
+
 
 /* MOBILE */
 
@@ -504,26 +504,11 @@ body.dashboard-locked #dashboardLock{display:flex;}
 body.dashboard-locked header,body.dashboard-locked .container,body.dashboard-locked footer{pointer-events:none;user-select:none}
 body.dashboard-locked #dashboardLock{pointer-events:auto}
 
-body.authenticated #lockButton{display:inline-block !important;}
+body #lockButton{display:inline-block !important;}
 </style>
 </head>
 
 <body>
-<div id="loginGate" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
-  <div class="login-card">
-    <div class="login-logo">🔐</div>
-    <h2 id="loginTitle">JON RADIO PLATFORM</h2>
-    <p>Admin Login</p>
-    <form id="loginForm" onsubmit="loginAdmin(event); return false;">
-      <label for="adminPassword">Password</label>
-      <input id="adminPassword" type="password" autocomplete="current-password" required
-             style="width:100%;padding:12px;border:1px solid #d0d5dd;border-radius:9px;margin:8px 0;">
-      <button id="loginButton" type="submit" class="primary">LOGIN</button>
-      <div id="loginError" class="login-error hidden"></div>
-    </form>
-  </div>
-</div>
-
 <div id="dashboardLock">
   <div class="lock-card">
     <div style="font-size:42px">🔒</div>
@@ -951,153 +936,7 @@ body.authenticated #lockButton{display:inline-block !important;}
 ===================================================== */
 
 const BACKEND_URL = window.JON_RADIO_BACKEND || "https://jon-radio-platform.onrender.com";
-const AUTH_TOKEN_KEY = "jonRadioAdminSession";
-const DASHBOARD_LOCK_KEY = "jonRadioDashboardLocked";
-let authToken = sessionStorage.getItem(AUTH_TOKEN_KEY) || "";
-const nativeFetch = window.fetch.bind(window);
-
-window.fetch = async function(input, init = {}){
-  const url = typeof input === "string" ? input : input.url;
-  const options = { ...init, headers: new Headers(init.headers || {}) };
-
-  if (authToken && !url.includes("/api/auth/login")) {
-    options.headers.set("Authorization", "Bearer " + authToken);
-  }
-
-  const response = await nativeFetch(input, options);
-
-  if (response.status === 401 && !url.includes("/api/auth/login")) {
-    logoutAdmin(false);
-  }
-
-  return response;
-};
-
-function setLoginError(message){
-  const box = document.getElementById("loginError");
-  box.textContent = message || "";
-  box.classList.toggle("hidden", !message);
-}
-
-async function loginAdmin(event){
-  if(event) event.preventDefault();
-  const passwordInput = document.getElementById("adminPassword");
-  const password = passwordInput ? passwordInput.value : "";
-  if(!passwordInput){
-    setLoginError("Login form error. Please refresh the page.");
-    return false;
-  }
-  setLoginError("");
-  const button = document.getElementById("loginButton");
-  if(button) button.disabled = true;
-
-  try{
-    const response = await nativeFetch(
-      BACKEND_URL + "/api/auth/login",
-      {
-        method:"POST",
-        headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},
-        body:new URLSearchParams({password})
-      }
-    );
-
-    const text = await response.text();
-    let result;
-    try{
-      result = JSON.parse(text);
-    }catch{
-      throw new Error("Login connection failed. Server returned an invalid response.");
-    }
-
-    if(!response.ok || !result.success){
-      throw new Error(result.error || "Incorrect password.");
-    }
-
-    authToken = result.token || "";
-    if(!authToken) throw new Error("Login failed: no session was created.");
-
-    sessionStorage.setItem(AUTH_TOKEN_KEY, authToken);
-    localStorage.removeItem(DASHBOARD_LOCK_KEY);
-    document.getElementById("adminPassword").value = "";
-    document.body.classList.add("authenticated");
-    document.body.classList.remove("dashboard-locked");
-    setLoginError("");
-
-    try{
-      await loadServerMusic();
-      await refreshBackendStatus();
-      renderStations();
-      renderMusic();
-      renderPlaylist();
-      updateBroadcastUI();
-    }catch(loadError){
-      console.warn("Post-login dashboard refresh failed:", loadError);
-    }
-  }catch(error){
-    setLoginError(error.message || "Login failed.");
-  }finally{
-    if(button) button.disabled = false;
-  }
-  return false;
-}
-
-
-function logoutAdmin(showLogin = true){
-  authToken = "";
-  sessionStorage.removeItem(AUTH_TOKEN_KEY);
-  localStorage.removeItem(DASHBOARD_LOCK_KEY);
-  document.body.classList.remove("authenticated");
-  if(showLogin){
-    setLoginError("");
-    const passwordInput=document.getElementById("adminPassword");
-    if(passwordInput) passwordInput.value="";
-  }
-}
-async function checkAdminSession(){
-  if(localStorage.getItem(DASHBOARD_LOCK_KEY) === "1"){
-    authToken = "";
-    sessionStorage.removeItem(AUTH_TOKEN_KEY);
-    document.body.classList.add("dashboard-locked");
-    // Keep the admin login overlay available. Login must always take priority
-    // over the dashboard-lock screen so a stale lock cannot trap the user.
-    return;
-  }
-  if(!authToken) return;
-
-  const tokenAtCheck = authToken;
-
-  try{
-    const response = await nativeFetch(
-      BACKEND_URL + "/api/auth/check",
-      {
-        headers:{
-          "Authorization":"Bearer " + tokenAtCheck
-        },
-        cache:"no-store"
-      }
-    );
-
-    // Do not clear a newly-created login session because an older
-    // session check finished after the user logged in.
-    if(authToken !== tokenAtCheck) return;
-
-    if(!response.ok){
-      logoutAdmin(false);
-      return;
-    }
-
-    document.body.classList.add("authenticated");
-  }catch(error){
-    // The same race protection applies to failed network checks.
-    if(authToken === tokenAtCheck){
-      logoutAdmin(false);
-    }
-  }
-}
-
-
-
-
+let authToken = "";
 /* =====================================================
    DASHBOARD LOCK
 ===================================================== */
@@ -2431,7 +2270,7 @@ if(stations.length === 0){
 ===================================================== */
 
 async function initializeAdmin(){
-  await checkAdminSession();
+  await 
 
   if(!document.body.classList.contains("authenticated")){
     return;
