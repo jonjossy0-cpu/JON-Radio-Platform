@@ -514,10 +514,10 @@ body.dashboard-locked #loginGate{display:none;}
     <div class="login-logo">🔐</div>
     <h2>JON RADIO PLATFORM</h2>
     <p>Admin Login</p>
-    <form id="loginForm">
+    <form id="loginForm" novalidate>
       <label for="adminPassword">Password</label>
       <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Enter admin password" required>
-      <button class="primary" type="submit">LOGIN</button>
+      <button id="loginButton" class="primary" type="submit">LOGIN</button>
       <div id="loginError" class="login-error hidden"></div>
     </form>
   </div>
@@ -978,45 +978,88 @@ function setLoginError(message){
 }
 
 async function loginAdmin(event){
-  event.preventDefault();
-  const password = document.getElementById("adminPassword").value;
+  if(event) event.preventDefault();
+
+  const passwordInput=document.getElementById("adminPassword");
+  const loginButton=document.getElementById("loginButton");
+  const password=passwordInput ? passwordInput.value : "";
+
   setLoginError("");
 
+  if(!password){
+    setLoginError("Please enter the admin password.");
+    if(passwordInput) passwordInput.focus();
+    return false;
+  }
+
+  if(loginButton){
+    loginButton.disabled=true;
+    loginButton.textContent="LOGGING IN...";
+  }
+
   try{
-    const response = await nativeFetch(
-      BACKEND_URL + "/api/auth/login",
-      {
-        method:"POST",
-        headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},
-        body:new URLSearchParams({password})
-      }
-    );
+    const base=String(BACKEND_URL||"").replace(/\/$/,"");
+    const response=await nativeFetch(base+"/api/auth/login",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/x-www-form-urlencoded;charset=UTF-8",
+        "Accept":"application/json"
+      },
+      body:new URLSearchParams({password}),
+      cache:"no-store"
+    });
 
-    const result = await response.json();
+    const text=await response.text();
+    let result=null;
 
-    if(!response.ok || !result.success){
-      throw new Error(result.error || "Login failed.");
+    try{
+      result=JSON.parse(text);
+    }catch(parseError){
+      throw new Error("Login server did not return JSON (HTTP "+response.status+").");
     }
 
-    authToken = result.token;
-    sessionStorage.setItem(AUTH_TOKEN_KEY, authToken);
+    if(!response.ok || !result.success){
+      throw new Error(result.error || "Incorrect password.");
+    }
+
+    if(!result.token){
+      throw new Error("Login server did not return a session token.");
+    }
+
+    authToken=result.token;
+    sessionStorage.setItem(AUTH_TOKEN_KEY,authToken);
     localStorage.removeItem(DASHBOARD_LOCK_KEY);
-    document.getElementById("adminPassword").value = "";
     document.body.classList.add("authenticated");
+    document.body.classList.remove("dashboard-locked");
     setLoginError("");
 
-    await Promise.all([
-      loadServerMusic(),
-      refreshBackendStatus()
-    ]);
-    renderStations();
-    renderMusic();
-    renderPlaylist();
-    updateBroadcastUI();
+    if(passwordInput) passwordInput.value="";
+
+    try{
+      await Promise.all([
+        loadServerMusic(),
+        refreshBackendStatus()
+      ]);
+      renderStations();
+      renderMusic();
+      renderPlaylist();
+      updateBroadcastUI();
+    }catch(loadError){
+      console.warn("Dashboard refresh after login:",loadError);
+    }
+
+    return true;
   }catch(error){
-    setLoginError(error.message || "Login failed.");
+    setLoginError(error && error.message ? error.message : "Login failed.");
+    return false;
+  }finally{
+    if(loginButton){
+      loginButton.disabled=false;
+      loginButton.textContent="LOGIN";
+    }
   }
 }
+
 function logoutAdmin(showLogin = true){
   authToken = "";
   sessionStorage.removeItem(AUTH_TOKEN_KEY);
