@@ -1962,8 +1962,29 @@ async function refreshBackendStatus(){
    ADVANCED AUTO DJ CONTROLS
 ===================================================== */
 async function postDJ(path, body={}){
-  const response=await fetch(BACKEND_URL+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-  const result=await response.json();
+  const headers={"Content-Type":"application/json"};
+  const token=sessionStorage.getItem("jonRadioAdminSession");
+  if(token) headers.Authorization="Bearer "+token;
+
+  const response=await fetch(BACKEND_URL+path,{
+    method:"POST",
+    headers,
+    body:JSON.stringify(body)
+  });
+
+  const text=await response.text();
+  let result;
+  try{
+    result=JSON.parse(text);
+  }catch{
+    throw new Error("Backend returned a non-JSON response. Please refresh the dashboard and log in again.");
+  }
+
+  if(response.status===401){
+    sessionStorage.removeItem("jonRadioAdminSession");
+    throw new Error("Admin session expired. Please log in again.");
+  }
+
   if(!response.ok || result.success===false) throw new Error(result.error||"Request failed.");
   if(result.status) applyDJStatus(result.status);
   return result;
