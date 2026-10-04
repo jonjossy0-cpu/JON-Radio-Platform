@@ -186,9 +186,11 @@ app.use("/api", requireAdmin);
 // =====================================
 
 const MUSIC_DIR = path.join(__dirname, "music");
+const ADS_DIR = path.join(__dirname, "ads");
+const JINGLES_DIR = path.join(__dirname, "jingles");
 
-if (!fs.existsSync(MUSIC_DIR)) {
-  fs.mkdirSync(MUSIC_DIR, { recursive: true });
+for (const dir of [MUSIC_DIR, ADS_DIR, JINGLES_DIR]) {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
 // =====================================
@@ -230,6 +232,42 @@ const upload = multer({
     }
   }
 });
+
+// =====================================
+// ADVERTISEMENT + JINGLE UPLOAD
+// =====================================
+
+function mediaUpload(dir, fieldName) {
+  return multer({
+    storage: multer.diskStorage({
+      destination: (req, file, cb) => cb(null, dir),
+      filename: (req, file, cb) => {
+        const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+        cb(null, \`\${Date.now()}-\${safeName}\`);
+      }
+    }),
+    limits: { fileSize: 50 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, [".mp3", ".wav", ".m4a"].includes(ext) || file.mimetype.startsWith("audio/"));
+    }
+  }).array(fieldName, 20);
+}
+
+app.post("/api/ads/upload", mediaUpload(ADS_DIR, "ads"), (req, res) => {
+  res.json({ success: true, message: "Advertisement audio uploaded.", files: (req.files || []).map(f => f.filename), status: autoDJ.getStatus() });
+});
+
+app.post("/api/jingles/upload", mediaUpload(JINGLES_DIR, "jingles"), (req, res) => {
+  res.json({ success: true, message: "Jingle / Station ID uploaded.", files: (req.files || []).map(f => f.filename), status: autoDJ.getStatus() });
+});
+
+// =====================================
+// MEDIA FILES
+// =====================================
+
+app.use("/ads", express.static(ADS_DIR));
+app.use("/jingles", express.static(JINGLES_DIR));
 
 // =====================================
 // MUSIC FILES
