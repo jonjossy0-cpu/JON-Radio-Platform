@@ -987,8 +987,8 @@ async function loginAdmin(event){
       BACKEND_URL + "/api/auth/login",
       {
         method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({password})
+        headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},
+        body:new URLSearchParams({password})
       }
     );
 
@@ -1000,22 +1000,19 @@ async function loginAdmin(event){
 
     authToken = result.token;
     sessionStorage.setItem(AUTH_TOKEN_KEY, authToken);
+    localStorage.removeItem(DASHBOARD_LOCK_KEY);
     document.getElementById("adminPassword").value = "";
     document.body.classList.add("authenticated");
     setLoginError("");
 
-    try{
-      await Promise.all([
-        loadServerMusic(),
-        refreshBackendStatus()
-      ]);
-      renderStations();
-      renderMusic();
-      renderPlaylist();
-      updateBroadcastUI();
-    }catch(loadError){
-      console.warn("Dashboard data refresh after login failed:", loadError);
-    }
+    await Promise.all([
+      loadServerMusic(),
+      refreshBackendStatus()
+    ]);
+    renderStations();
+    renderMusic();
+    renderPlaylist();
+    updateBroadcastUI();
   }catch(error){
     setLoginError(error.message || "Login failed.");
   }
