@@ -753,35 +753,50 @@ body.dashboard-locked #loginGate{display:none;}
 <!-- ================= AUTO DJ ================= -->
 
 <div class="section">
-
   <div class="section-title">
-
     <h2>🤖 24/7 Auto DJ</h2>
-
-    <span id="autoDJStatus"
-          class="status offline">
-      OFF
-    </span>
-
+    <span id="autoDJStatus" class="status offline">OFF</span>
   </div>
-
-  <div class="live-help">
-    Auto DJ plays the station playlist continuously.
-    When Live Microphone is activated, Live takes priority.
-    When Live ends, Auto DJ can resume.
+  <div class="live-help">Professional Auto DJ controls. Live Microphone always takes priority.</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+    <button id="autoDJButton" class="success" onclick="toggleAutoDJ()">▶ Start Auto DJ</button>
+    <button class="warning" onclick="stopAutoDJ()">■ Stop</button>
+    <button class="light" onclick="autoDJNext()">⏭ Next Song</button>
+    <button class="light" onclick="autoDJPrevious()">⏮ Previous</button>
   </div>
+  <div class="form-grid">
+    <div class="form-group"><label>Shuffle</label><select id="djShuffle" onchange="saveDJSettings()"><option value="false">OFF</option><option value="true">ON</option></select></div>
+    <div class="form-group"><label>Repeat</label><select id="djRepeat" onchange="saveDJSettings()"><option value="false">OFF</option><option value="true">ON</option></select></div>
+    <div class="form-group"><label>Crossfade (seconds)</label><select id="djCrossfade" onchange="saveDJSettings()"><option>0</option><option selected>5</option><option>10</option><option>15</option></select></div>
+    <div class="form-group"><label>Advertisement interval</label><select id="djAdInterval" onchange="saveDJSettings()"><option value="0">OFF</option><option value="15">Every 15 min</option><option value="30">Every 30 min</option><option value="60">Every 60 min</option></select></div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
+    <button class="light" onclick="clearDJQueue()">🧹 Clear Queue</button>
+    <button class="light" onclick="loadDJHistory()">📜 Play History</button>
+  </div>
+  <div id="djHistory" class="live-help" style="margin-top:12px;"></div>
+</div>
 
-  <button id="autoDJButton"
-          class="success"
-          onclick="toggleAutoDJ()">
-    ▶ Start Auto DJ
-  </button>
+<!-- ================= ADVERTISEMENT ================= -->
+<div class="section">
+  <div class="section-title"><h2>📢 Advertisement Audio</h2><span id="adCount" class="status offline">0 ADS</span></div>
+  <div class="live-help">Upload advertisement audio separately. Auto DJ inserts ads according to the selected timer.</div>
+  <label class="primary" style="display:inline-block;padding:11px 15px;border-radius:9px;cursor:pointer;">
+    + Upload Advertisement
+    <input id="adUpload" type="file" accept="audio/*,.mp3,.wav,.m4a" multiple style="display:none;">
+  </label>
+  <div id="adLibrary" style="margin-top:14px;"></div>
+</div>
 
-  <button class="warning"
-          onclick="stopAutoDJ()">
-    ■ Stop Auto DJ
-  </button>
-
+<!-- ================= JINGLES ================= -->
+<div class="section">
+  <div class="section-title"><h2>🎙️ Jingles / Station ID</h2><span id="jingleCount" class="status offline">0</span></div>
+  <div class="live-help">Keep station IDs and jingles separate from the normal music library.</div>
+  <label class="primary" style="display:inline-block;padding:11px 15px;border-radius:9px;cursor:pointer;">
+    + Upload Jingle
+    <input id="jingleUpload" type="file" accept="audio/*,.mp3,.wav,.m4a" multiple style="display:none;">
+  </label>
+  <div id="jingleLibrary" style="margin-top:14px;"></div>
 </div>
 
 
@@ -1944,6 +1959,51 @@ async function refreshBackendStatus(){
 
 
 /* =====================================================
+   ADVANCED AUTO DJ CONTROLS
+===================================================== */
+async function postDJ(path, body={}){
+  const response=await fetch(BACKEND_URL+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const result=await response.json();
+  if(!response.ok || result.success===false) throw new Error(result.error||"Request failed.");
+  if(result.status) applyDJStatus(result.status);
+  return result;
+}
+function applyDJStatus(s){
+  if(!s) return;
+  autoDJ=!!s.autoDJ; liveMode=!!s.live;
+  const now=document.getElementById("nowPlaying"); const next=document.getElementById("nextSong");
+  if(now && s.nowPlaying) now.textContent="🎵 "+s.nowPlaying;
+  if(next) next.textContent="Next: "+(s.nextSong||"—");
+  const ad=document.getElementById("adCount"); if(ad) ad.textContent=(s.adCount||0)+" ADS";
+  const j=document.getElementById("jingleCount"); if(j) j.textContent=s.jingleCount||0;
+  updateBroadcastUI();
+}
+async function autoDJNext(){try{await postDJ("/api/autodj/next")}catch(e){alert(e.message)}}
+async function autoDJPrevious(){try{await postDJ("/api/autodj/previous")}catch(e){alert(e.message)}}
+async function clearDJQueue(){try{await postDJ("/api/autodj/queue/clear")}catch(e){alert(e.message)}}
+async function saveDJSettings(){
+  try{await postDJ("/api/autodj/settings",{shuffle:document.getElementById("djShuffle").value==="true",repeat:document.getElementById("djRepeat").value==="true",crossfadeSeconds:Number(document.getElementById("djCrossfade").value),adIntervalMinutes:Number(document.getElementById("djAdInterval").value)});}
+  catch(e){alert(e.message)}
+}
+async function loadDJHistory(){
+  try{const r=await fetch(BACKEND_URL+"/api/autodj/history",{cache:"no-store"});const d=await r.json();document.getElementById("djHistory").innerHTML=(d.history||[]).map(x=>"• "+escapeHTML(x.item)).join("<br>")||"No play history yet.";}catch(e){alert(e.message)}
+}
+async function loadDJMedia(){
+  try{const r=await fetch(BACKEND_URL+"/api/autodj/media",{cache:"no-store"});const d=await r.json();
+    document.getElementById("adCount").textContent=(d.ads||[]).length+" ADS"; document.getElementById("jingleCount").textContent=(d.jingles||[]).length;
+    document.getElementById("adLibrary").innerHTML=(d.ads||[]).map(x=>'<div class="music-item"><strong>📢 '+escapeHTML(x)+'</strong></div>').join("")||'<div class="empty">No advertisements uploaded.</div>';
+    document.getElementById("jingleLibrary").innerHTML=(d.jingles||[]).map(x=>'<div class="music-item"><strong>🎙️ '+escapeHTML(x)+'</strong></div>').join("")||'<div class="empty">No jingles uploaded.</div>';
+  }catch(e){console.log("MEDIA:",e.message)}
+}
+async function uploadDJMedia(inputId,url){
+  const input=document.getElementById(inputId); const files=Array.from(input.files||[]); if(!files.length)return;
+  const fd=new FormData(); files.forEach(f=>fd.append(inputId==="adUpload"?"ads":"jingles",f));
+  try{const r=await fetch(BACKEND_URL+url,{method:"POST",body:fd});const d=await r.json();if(!r.ok||!d.success)throw new Error(d.error||"Upload failed.");await loadDJMedia();alert(d.message||"Uploaded.");}catch(e){alert("Upload failed: "+e.message)}input.value="";
+}
+document.getElementById("adUpload").addEventListener("change",()=>uploadDJMedia("adUpload","/api/ads/upload"));
+document.getElementById("jingleUpload").addEventListener("change",()=>uploadDJMedia("jingleUpload","/api/jingles/upload"));
+
+/* =====================================================
    LIVE MICROPHONE
 ===================================================== */
 
@@ -2301,6 +2361,7 @@ async function initializeAdmin(){
   renderStations();
   renderMusic();
   renderPlaylist();
+  await loadDJMedia();
   updateBroadcastUI();
 }
 

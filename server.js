@@ -186,9 +186,11 @@ app.use("/api", requireAdmin);
 // =====================================
 
 const MUSIC_DIR = path.join(__dirname, "music");
+const ADS_DIR = path.join(__dirname, "ads");
+const JINGLES_DIR = path.join(__dirname, "jingles");
 
-if (!fs.existsSync(MUSIC_DIR)) {
-  fs.mkdirSync(MUSIC_DIR, { recursive: true });
+for (const dir of [MUSIC_DIR, ADS_DIR, JINGLES_DIR]) {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
 // =====================================
@@ -230,6 +232,42 @@ const upload = multer({
     }
   }
 });
+
+// =====================================
+// ADVERTISEMENT + JINGLE UPLOAD
+// =====================================
+
+function mediaUpload(dir, fieldName) {
+  return multer({
+    storage: multer.diskStorage({
+      destination: (req, file, cb) => cb(null, dir),
+      filename: (req, file, cb) => {
+        const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+        cb(null, \`\${Date.now()}-\${safeName}\`);
+      }
+    }),
+    limits: { fileSize: 50 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, [".mp3", ".wav", ".m4a"].includes(ext) || file.mimetype.startsWith("audio/"));
+    }
+  }).array(fieldName, 20);
+}
+
+app.post("/api/ads/upload", mediaUpload(ADS_DIR, "ads"), (req, res) => {
+  res.json({ success: true, message: "Advertisement audio uploaded.", files: (req.files || []).map(f => f.filename), status: autoDJ.getStatus() });
+});
+
+app.post("/api/jingles/upload", mediaUpload(JINGLES_DIR, "jingles"), (req, res) => {
+  res.json({ success: true, message: "Jingle / Station ID uploaded.", files: (req.files || []).map(f => f.filename), status: autoDJ.getStatus() });
+});
+
+// =====================================
+// MEDIA FILES
+// =====================================
+
+app.use("/ads", express.static(ADS_DIR));
+app.use("/jingles", express.static(JINGLES_DIR));
 
 // =====================================
 // MUSIC FILES
@@ -696,6 +734,47 @@ app.get(
 
   }
 );
+
+// =====================================
+// AUTO DJ ADVANCED CONTROLS
+// =====================================
+
+app.post("/api/autodj/next", (req, res) => {
+  const success = autoDJ.next();
+  res.json({ success, status: autoDJ.getStatus() });
+});
+
+app.post("/api/autodj/previous", (req, res) => {
+  const success = autoDJ.previous();
+  res.json({ success, status: autoDJ.getStatus() });
+});
+
+app.post("/api/autodj/queue", (req, res) => {
+  const success = autoDJ.enqueue(req.body.song);
+  res.json({ success, status: autoDJ.getStatus() });
+});
+
+app.post("/api/autodj/queue/clear", (req, res) => {
+  autoDJ.clearQueue();
+  res.json({ success: true, status: autoDJ.getStatus() });
+});
+
+app.post("/api/autodj/settings", (req, res) => {
+  const result = {};
+  if (req.body.shuffle !== undefined) result.shuffle = autoDJ.setShuffle(req.body.shuffle === true || req.body.shuffle === "true");
+  if (req.body.repeat !== undefined) result.repeat = autoDJ.setRepeat(req.body.repeat === true || req.body.repeat === "true");
+  if (req.body.crossfadeSeconds !== undefined) result.crossfade = autoDJ.setCrossfade(req.body.crossfadeSeconds);
+  if (req.body.adIntervalMinutes !== undefined) result.adInterval = autoDJ.setAdInterval(req.body.adIntervalMinutes);
+  res.json({ success: Object.values(result).every(Boolean), settings: result, status: autoDJ.getStatus() });
+});
+
+app.get("/api/autodj/history", (req, res) => {
+  res.json({ success: true, history: autoDJ.getStatus().history });
+});
+
+app.get("/api/autodj/media", (req, res) => {
+  res.json({ success: true, ads: autoDJ.getAdFiles(), jingles: autoDJ.getJingleFiles() });
+});
 
 // =====================================
 // ERROR HANDLER
