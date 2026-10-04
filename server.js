@@ -140,6 +140,27 @@ liveWSS.on("connection", ws => {
 });
 
 // =====================================
+// JON STREAM UPDATE SERVER
+// =====================================
+
+app.get("/api/jon-stream-update", (req, res) => {
+  const updatePath = path.join(__dirname, "update", "jon-stream-update.json");
+
+  try {
+    const update = JSON.parse(fs.readFileSync(updatePath, "utf8"));
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.json(update);
+  } catch (error) {
+    console.error("JON STREAM UPDATE ERROR:", error.message);
+    res.status(500).json({
+      success: false,
+      error: "Update information is temporarily unavailable."
+    });
+  }
+});
+
+// =====================================
 // HOME
 // =====================================
 
