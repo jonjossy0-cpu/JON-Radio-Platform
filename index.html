@@ -1017,6 +1017,7 @@ async function loginAdmin(event){
     setLoginError(error.message || "Login failed.");
   }
 }
+
 function logoutAdmin(showLogin = true){
   authToken = "";
   sessionStorage.removeItem(AUTH_TOKEN_KEY);
