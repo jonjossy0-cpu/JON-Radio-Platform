@@ -1752,27 +1752,35 @@ function formatBytes(bytes){
 }
 
 
-function deleteMusic(index){
+function playMusic(index){
+  const music=musicLibrary[index];
+  if(!music) return;
+  if(currentAudio){ currentAudio.pause(); currentAudio.src=""; }
+  const source=music.server ? BACKEND_URL + music.url : music.url;
+  currentAudio=new Audio(source);
+  currentAudio.preload="metadata";
+  currentAudio.play().catch(()=>{
+    alert("This audio could not be played in the browser. Auto DJ supports MP3, WAV and M4A on the server.");
+  });
+}
 
-  if(
-    !confirm(
-      "Delete this music from the library?"
-    )
-  ){
-
-    return;
-
+async function deleteMusic(index){
+  const music=musicLibrary[index];
+  if(!music) return;
+  if(!confirm("Delete this music from the library?")) return;
+  try{
+    const response=await fetch(BACKEND_URL+"/api/music/"+encodeURIComponent(music.name),{method:"DELETE"});
+    const result=await response.json();
+    if(!response.ok || !result.success) throw new Error(result.error||"Delete failed.");
+    musicLibrary.splice(index,1);
+    playlist=playlist.filter(song=>song.name!==music.name);
+    saveMusic(); savePlaylist();
+    renderMusic(); renderPlaylist();
+    await syncPlaylist();
+    await refreshBackendStatus();
+  }catch(error){
+    alert("Delete failed: "+(error.message||"Check the server connection."));
   }
-
-
-  musicLibrary.splice(index,1);
-
-  saveMusic();
-
-  renderMusic();
-
-  updateStats();
-
 }
 
 
