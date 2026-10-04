@@ -178,6 +178,15 @@ app.get("/api/auth/check", requireAdmin, (req, res) => {
   res.json({ success: true, authenticated: true });
 });
 
+// Public health endpoint for deployment/runtime checks.
+app.get("/health", (req, res) => {
+  res.json({
+    success: true,
+    service: "JON RADIO PLATFORM",
+    status: "ONLINE"
+  });
+});
+
 // All /api routes below this point are admin-protected.
 // Public update metadata, when present, is intentionally defined before this guard.
 app.use("/api", requireAdmin);
@@ -227,7 +236,7 @@ const upload = multer({
     ];
 
     const ext = path.extname(file.originalname).toLowerCase();
-    if (allowed.includes(file.mimetype) || ext === ".mp3" || ext === ".wav" || ext === ".m4a" || ext === ".m4a") {
+    if (allowed.includes(file.mimetype) || ext === ".mp3" || ext === ".wav" || ext === ".m4a") {
       cb(null, true);
     } else {
       cb(new Error("Only MP3, WAV, and M4A audio files are allowed."));
