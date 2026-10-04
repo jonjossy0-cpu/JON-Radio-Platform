@@ -502,6 +502,8 @@ body.dashboard-locked header,body.dashboard-locked .container,body.dashboard-loc
 body.dashboard-locked #dashboardLock{pointer-events:auto}
 
 body.authenticated #lockButton{display:inline-block !important;}
+body.dashboard-locked #loginGate{display:none;}
+body.dashboard-locked #loginGate{display:none;}
 </style>
 </head>
 
@@ -933,6 +935,7 @@ body.authenticated #lockButton{display:inline-block !important;}
 ===================================================== */
 
 const AUTH_TOKEN_KEY = "jonRadioAdminSession";
+const DASHBOARD_LOCK_KEY = "jonRadioDashboardLocked";
 let authToken = sessionStorage.getItem(AUTH_TOKEN_KEY) || "";
 const nativeFetch = window.fetch.bind(window);
 
@@ -982,6 +985,7 @@ async function loginAdmin(event){
 
     authToken = result.token;
     sessionStorage.setItem(AUTH_TOKEN_KEY, authToken);
+    localStorage.removeItem(DASHBOARD_LOCK_KEY);
     document.getElementById("adminPassword").value = "";
     document.body.classList.add("authenticated");
     setLoginError("");
@@ -1002,6 +1006,7 @@ async function loginAdmin(event){
 function logoutAdmin(showLogin = true){
   authToken = "";
   sessionStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(DASHBOARD_LOCK_KEY);
   document.body.classList.remove("authenticated");
   if(showLogin){
     setLoginError("");
@@ -1010,6 +1015,12 @@ function logoutAdmin(showLogin = true){
 }
 
 async function checkAdminSession(){
+  if(localStorage.getItem(DASHBOARD_LOCK_KEY) === "1"){
+    authToken = "";
+    sessionStorage.removeItem(AUTH_TOKEN_KEY);
+    document.body.classList.add("dashboard-locked");
+    return;
+  }
   if(!authToken) return;
 
   try{
@@ -1043,6 +1054,14 @@ document.getElementById("loginForm").addEventListener("submit", loginAdmin);
 let dashboardLocked = false;
 function lockDashboard(){
   dashboardLocked = true;
+  authToken = "";
+  sessionStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.setItem(DASHBOARD_LOCK_KEY, "1");
+  document.body.classList.remove("authenticated");
+  authToken = "";
+  sessionStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.setItem(DASHBOARD_LOCK_KEY, "1");
+  document.body.classList.remove("authenticated");
   const errorBox = document.getElementById("lockError");
   if(errorBox) errorBox.classList.add("hidden");
   document.body.classList.add("dashboard-locked");
@@ -1058,6 +1077,8 @@ async function unlockDashboard(){
     if(!response.ok || !result.success) throw new Error(result.error || "Incorrect password.");
     authToken = result.token;
     sessionStorage.setItem(AUTH_TOKEN_KEY, authToken);
+    localStorage.removeItem(DASHBOARD_LOCK_KEY);
+    document.body.classList.add("authenticated");
     dashboardLocked = false;
     document.body.classList.remove("dashboard-locked");
     setLoginError("");
