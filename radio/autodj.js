@@ -12,39 +12,37 @@ let currentIndex = 0;
 let currentProcess = null;
 let autoDJRunning = false;
 let liveMode = false;
+let paused = false;
 let nowPlaying = null;
 let nextSong = null;
 let previousSong = null;
+let currentItem = null;
+let currentOffset = 0;
 let shuffleMode = false;
 let repeatMode = false;
 let crossfadeSeconds = 5;
 let adIntervalMinutes = 0;
+let adTimes = [];
 let lastAdAt = 0;
+let lastScheduledAdKey = "";
 let adIndex = 0;
 let jingleIndex = 0;
 let playHistory = [];
 let queue = [];
 let generation = 0;
+let gainDb = 0;
 
 function audioFiles(dir) {
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir).filter(file => {
     const ext = path.extname(file).toLowerCase();
-    return ext === ".mp3" || ext === ".wav" || ext === ".m4a";
+    return [".mp3", ".wav", ".m4a"].includes(ext);
   });
 }
 
-function getMusicFiles() {
-  return audioFiles(MUSIC_DIR);
-}
-
-function getAdFiles() {
-  return audioFiles(ADS_DIR);
-}
-
-function getJingleFiles() {
-  return audioFiles(JINGLES_DIR);
-}
+function getMusicFiles() { return audioFiles(MUSIC_DIR); }
+function getAdFiles() { return audioFiles(ADS_DIR); }
+function getJingleFiles() { return audioFiles(JINGLES_DIR); }
 
 function ensureDirs() {
   for (const dir of [MUSIC_DIR, ADS_DIR, JINGLES_DIR]) {
@@ -54,41 +52,37 @@ function ensureDirs() {
 
 function loadPlaylist() {
   ensureDirs();
-  playlist = getMusicFiles();
-
-  if (!playlist.length) {
-    console.log("JON AUTO DJ: Music library is empty.");
-    return false;
-  }
-
+  const files = getMusicFiles();
+  if (!files.length) return false;
+  playlist = files;
   if (currentIndex >= playlist.length) currentIndex = 0;
   return true;
 }
 
 function chooseIndex() {
   if (!playlist.length) return -1;
-  if (queue.length) return -1;
-
   if (shuffleMode) {
     if (playlist.length === 1) return 0;
     let index = Math.floor(Math.random() * playlist.length);
     if (playlist[index] === nowPlaying) index = (index + 1) % playlist.length;
     return index;
   }
-
   if (currentIndex >= playlist.length) currentIndex = 0;
   return currentIndex++;
 }
 
-function getNextSong() {
-  if (queue.length) return queue.shift();
-  const index = chooseIndex();
-  return index >= 0 ? playlist[index] : null;
+function makeSong(song) {
+  return { type: "song", name: song, filePath: path.join(MUSIC_DIR, song) };
 }
 
-function updateNowPlaying(song) {
-  nowPlaying = song;
-  nextSong = queue.length ? queue[0] : (playlist.length ? (shuffleMode ? "Shuffle" : playlist[currentIndex % playlist.length]) : null);
+function getNextSong() {
+  if (queue.length) return makeSong(queue.shift());
+  const index = chooseIndex();
+  return index >= 0 ? makeSong(playlist[index]) : null;
+}
+
+function updateNext(song) {
+  nextSong = song ? song.name : null;
 }
 
 function addHistory(item) {
@@ -97,7 +91,19 @@ function addHistory(item) {
 }
 
 function shouldPlayAd() {
-  return adIntervalMinutes > 0 && getAdFiles().length > 0 &&
+  const ads = getAdFiles();
+  if (!ads.length) return false;
+
+  const now = new Date();
+  const hhmm = now.toTimeString().slice(0, 5);
+  const key = now.toISOString().slice(0, 10) + " " + hhmm;
+
+  if (adTimes.includes(hhmm) && key !== lastScheduledAdKey) {
+    lastScheduledAdKey = key;
+    return true;
+  }
+
+  return adIntervalMinutes > 0 &&
     (Date.now() - lastAdAt) >= adIntervalMinutes * 60 * 1000;
 }
 
@@ -118,6 +124,22 @@ function getJingle() {
   return { type: "jingle", name: jingle, filePath: path.join(JINGLES_DIR, jingle) };
 }
 
+function getFollowingItem() {
+  if (shouldPlayAd()) return getTimedAd();
+  if (repeatMode && currentItem && currentItem.type === "song") return makeSong(currentItem.name);
+  const song = getNextSong();
+  if (!song) return null;
+  return song;
+}
+
+function getTransitionItem() {
+  if (currentItem && currentItem.type === "song") {
+    const jingle = getJingle();
+    if (jingle) return jingle;
+  }
+  return getFollowingItem();
+}
+
 function terminateCurrent() {
   generation += 1;
   if (currentProcess) {
@@ -126,103 +148,131 @@ function terminateCurrent() {
   }
 }
 
-function spawnAudio(filePath) {
-  return spawn("ffmpeg", [
+function spawnSingle(item, offset, myGeneration) {
+  const args = [
     "-hide_banner", "-loglevel", "error", "-re",
-    "-i", filePath,
-    "-vn", "-ac", "2", "-ar", "44100", "-b:a", "128k", "-f", "mp3", "pipe:1"
-  ]);
-}
+    ...(offset > 0 ? ["-ss", String(offset)] : []),
+    "-i", item.filePath,
+    "-vn", "-ac", "2", "-ar", "44100",
+    "-af", `volume=${gainDb}dB`,
+    "-b:a", "128k", "-f", "mp3", "pipe:1"
+  ];
 
-function playItem(item, myGeneration) {
-  if (!autoDJRunning || liveMode || myGeneration !== generation) return;
-
-  currentProcess = spawnAudio(item.filePath);
+  currentProcess = spawn("ffmpeg", args);
   currentProcess.stdout.on("data", chunk => stream.broadcastAudio(chunk));
   currentProcess.stderr.on("data", data => console.error("JON AUTO DJ FFmpeg:", data.toString().trim()));
 
   currentProcess.on("error", error => {
-    console.error("JON AUTO DJ: FFmpeg error:", error.message);
+    console.error("JON AUTO DJ FFmpeg error:", error.message);
     currentProcess = null;
-    if (autoDJRunning && !liveMode && myGeneration === generation) setTimeout(playSong, 500);
+    if (autoDJRunning && !liveMode && myGeneration === generation && !paused) setTimeout(advance, 500);
   });
 
   currentProcess.on("close", () => {
     currentProcess = null;
-    if (autoDJRunning && !liveMode && myGeneration === generation) setTimeout(playSong, 200);
+    if (autoDJRunning && !liveMode && myGeneration === generation && !paused) setTimeout(advance, 100);
   });
 }
 
-function playSong() {
-  if (!autoDJRunning || liveMode) return;
+function spawnCrossfade(first, second, fade, myGeneration) {
+  const d = Math.max(0.1, Number(fade));
+  const args = [
+    "-hide_banner", "-loglevel", "error", "-re",
+    "-i", first.filePath,
+    "-re", "-i", second.filePath,
+    "-filter_complex", `[0:a]aresample=44100,aformat=channel_layouts=stereo[a0];[1:a]aresample=44100,aformat=channel_layouts=stereo[a1];[a0][a1]acrossfade=d=${d}:curve1=tri:curve2=tri,volume=${gainDb}dB[aout]`,
+    "-map", "[aout]", "-b:a", "128k", "-f", "mp3", "pipe:1"
+  ];
+
+  currentProcess = spawn("ffmpeg", args);
+  currentProcess.stdout.on("data", chunk => stream.broadcastAudio(chunk));
+  currentProcess.stderr.on("data", data => console.error("JON AUTO DJ FFmpeg:", data.toString().trim()));
+
+  currentProcess.on("error", error => {
+    console.error("JON AUTO DJ crossfade error:", error.message);
+    currentProcess = null;
+    if (autoDJRunning && !liveMode && myGeneration === generation && !paused) setTimeout(advance, 500);
+  });
+
+  currentProcess.on("close", () => {
+    currentProcess = null;
+    if (autoDJRunning && !liveMode && myGeneration === generation && !paused) {
+      currentOffset = d;
+      currentItem = second;
+      nowPlaying = second.name;
+      setTimeout(advance, 100);
+    }
+  });
+}
+
+function playPair(first, second, myGeneration) {
+  if (crossfadeSeconds <= 0 || !second) {
+    spawnSingle(first, currentOffset, myGeneration);
+    return;
+  }
+  spawnCrossfade(first, second, crossfadeSeconds, myGeneration);
+}
+
+function advance() {
+  if (!autoDJRunning || liveMode || paused) return;
   if (!loadPlaylist()) {
-    setTimeout(playSong, 5000);
+    setTimeout(advance, 5000);
     return;
   }
 
-  const previous = nowPlaying;
-  let item = null;
-
-  if (shouldPlayAd()) {
-    item = getTimedAd();
-  } else {
-    const song = getNextSong();
-    if (!song) {
-      setTimeout(playSong, 1000);
-      return;
-    }
-    item = { type: "song", name: song, filePath: path.join(MUSIC_DIR, song) };
+  const first = currentItem ? currentItem : getFollowingItem();
+  if (!first) {
+    setTimeout(advance, 1000);
+    return;
   }
 
-  previousSong = previous;
-  updateNowPlaying(item.name);
-  addHistory(item.name);
+  const second = getTransitionItem();
+  previousSong = nowPlaying;
+  currentItem = first;
+  currentOffset = currentItem === first && nowPlaying === first.name ? currentOffset : 0;
+  nowPlaying = first.name;
+  updateNext(second);
+  addHistory(first.name);
 
   const myGeneration = generation;
-  playItem(item, myGeneration);
+  playPair(first, second, myGeneration);
 }
 
 function next() {
   if (!autoDJRunning || liveMode) return false;
-  if (!playlist.length) loadPlaylist();
   terminateCurrent();
-  playSong();
+  currentItem = null;
+  currentOffset = 0;
+  advance();
   return true;
 }
 
 function previous() {
-  if (!autoDJRunning || liveMode) return false;
-  if (!previousSong) return false;
-  const current = nowPlaying;
-  if (current && !queue.includes(current)) queue.unshift(current);
-  queue.unshift(previousSong);
+  if (!autoDJRunning || liveMode || !previousSong) return false;
   terminateCurrent();
-  playSong();
+  const current = nowPlaying;
+  if (current && current !== previousSong && !queue.includes(current)) queue.unshift(current);
+  queue.unshift(previousSong);
+  currentItem = null;
+  currentOffset = 0;
+  advance();
   return true;
 }
 
 function enqueue(song) {
-  if (!song) return false;
-  if (!playlist.includes(song)) return false;
+  if (!song || !playlist.includes(song)) return false;
   queue.push(song);
-  nextSong = queue[0] || nextSong;
+  updateNext({ name: queue[0] });
   return true;
 }
 
 function clearQueue() {
   queue = [];
-  updateNowPlaying(nowPlaying);
+  updateNext(null);
 }
 
-function setShuffle(enabled) {
-  shuffleMode = Boolean(enabled);
-  return shuffleMode;
-}
-
-function setRepeat(enabled) {
-  repeatMode = Boolean(enabled);
-  return repeatMode;
-}
+function setShuffle(enabled) { shuffleMode = Boolean(enabled); return shuffleMode; }
+function setRepeat(enabled) { repeatMode = Boolean(enabled); return repeatMode; }
 
 function setCrossfade(seconds) {
   const value = Number(seconds);
@@ -239,28 +289,67 @@ function setAdInterval(minutes) {
   return true;
 }
 
+function setAdTimes(times) {
+  if (!Array.isArray(times)) return false;
+  const valid = times.filter(t => /^([01]\\d|2[0-3]):[0-5]\\d$/.test(String(t)));
+  adTimes = [...new Set(valid)];
+  return true;
+}
+
+function setGain(db) {
+  const value = Number(db);
+  if (!Number.isFinite(value) || value < -12 || value > 12) return false;
+  gainDb = value;
+  return true;
+}
+
+function pause() {
+  if (!currentProcess || !autoDJRunning || liveMode || paused) return false;
+  try {
+    process.kill(currentProcess.pid, "SIGSTOP");
+    paused = true;
+    return true;
+  } catch { return false; }
+}
+
+function resume() {
+  if (!currentProcess || !paused) return false;
+  try {
+    process.kill(currentProcess.pid, "SIGCONT");
+    paused = false;
+    return true;
+  } catch { return false; }
+}
+
 function startAutoDJ() {
   if (liveMode) return false;
   if (autoDJRunning) return true;
   if (!loadPlaylist()) return false;
   if (!stream.startAutoDJBroadcast()) return false;
   autoDJRunning = true;
+  paused = false;
   lastAdAt = Date.now();
-  playSong();
+  currentItem = null;
+  currentOffset = 0;
+  advance();
   return true;
 }
 
 function stopAutoDJ() {
   autoDJRunning = false;
+  paused = false;
   terminateCurrent();
   stream.stopAutoDJBroadcast();
   nowPlaying = null;
   nextSong = null;
   previousSong = null;
+  currentItem = null;
+  currentOffset = 0;
   return true;
 }
 
 function startLive() {
+  if (liveMode) return true;
   liveMode = true;
   terminateCurrent();
   return true;
@@ -268,7 +357,12 @@ function startLive() {
 
 function stopLive() {
   liveMode = false;
-  if (autoDJRunning) setTimeout(playSong, 500);
+  if (autoDJRunning) {
+    paused = false;
+    currentItem = null;
+    currentOffset = 0;
+    setTimeout(advance, 300);
+  }
   return true;
 }
 
@@ -276,6 +370,7 @@ function getStatus() {
   return {
     autoDJ: autoDJRunning,
     live: liveMode,
+    paused,
     nowPlaying,
     nextSong,
     previousSong,
@@ -285,6 +380,8 @@ function getStatus() {
     repeat: repeatMode,
     crossfadeSeconds,
     adIntervalMinutes,
+    adTimes,
+    gainDb,
     adCount: getAdFiles().length,
     jingleCount: getJingleFiles().length,
     history: playHistory.slice(0, 20)
@@ -292,21 +389,9 @@ function getStatus() {
 }
 
 module.exports = {
-  startAutoDJ,
-  stopAutoDJ,
-  startLive,
-  stopLive,
-  getStatus,
-  loadPlaylist,
-  getMusicFiles,
-  getAdFiles,
-  getJingleFiles,
-  next,
-  previous,
-  enqueue,
-  clearQueue,
-  setShuffle,
-  setRepeat,
-  setCrossfade,
-  setAdInterval
+  startAutoDJ, stopAutoDJ, startLive, stopLive, getStatus,
+  loadPlaylist, getMusicFiles, getAdFiles, getJingleFiles,
+  next, previous, enqueue, clearQueue,
+  setShuffle, setRepeat, setCrossfade, setAdInterval, setAdTimes, setGain,
+  pause, resume
 };

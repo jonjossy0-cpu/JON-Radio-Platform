@@ -768,6 +768,26 @@ app.post("/api/autodj/settings", (req, res) => {
   res.json({ success: Object.values(result).every(Boolean), settings: result, status: autoDJ.getStatus() });
 });
 
+app.post("/api/autodj/pause", (req, res) => {
+  const success = autoDJ.pause();
+  res.json({ success, status: autoDJ.getStatus() });
+});
+
+app.post("/api/autodj/resume", (req, res) => {
+  const success = autoDJ.resume();
+  res.json({ success, status: autoDJ.getStatus() });
+});
+
+app.post("/api/autodj/gain", (req, res) => {
+  const success = autoDJ.setGain(req.body.gainDb);
+  res.json({ success, status: autoDJ.getStatus() });
+});
+
+app.post("/api/autodj/ad-times", (req, res) => {
+  const success = autoDJ.setAdTimes(req.body.times);
+  res.json({ success, status: autoDJ.getStatus() });
+});
+
 app.get("/api/autodj/history", (req, res) => {
   res.json({ success: true, history: autoDJ.getStatus().history });
 });
