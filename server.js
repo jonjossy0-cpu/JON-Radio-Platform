@@ -102,8 +102,17 @@ function clientIp(req) {
 }
 
 function requireAdmin(req, res, next) {
-  // Admin login has been removed from the dashboard.
-  // Keep this middleware name so existing route wiring remains compatible.
+  const auth = String(req.headers.authorization || "");
+  const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+
+  if (!verifySession(token)) {
+    return res.status(401).json({
+      success: false,
+      error: "Authentication required."
+    });
+  }
+
+  req.adminAuthenticated = true;
   next();
 }
 
