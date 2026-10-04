@@ -1,6 +1,6 @@
 const{spawn}=require("child_process");const fs=require("fs"),path=require("path");const broadcast=require("./broadcast");
 const MUSIC=path.join(__dirname,"..","music"),ADS=path.join(__dirname,"..","ads"),JINGLES=path.join(__dirname,"..","jingles");let FFMPEG_PATH="ffmpeg";try{FFMPEG_PATH=require("ffmpeg-static")||FFMPEG_PATH}catch{}
-let running=false,paused=false,live=false,wasRunningBeforeLive=false,proc=null,playlist=[],queue=[],index=0,shuffle=false,repeat=false,crossfade=1,gain=0,adInterval=0,lastAd=0,adTimes=[],jingleInterval=0,lastJingle=0;let now=null,next=null,previous=null,generation=0;
+let running=false,paused=false,live=false,wasRunningBeforeLive=false,proc=null,playlist=[],queue=[],index=0,shuffle=false,repeat=false,crossfade=0,gain=0,adInterval=0,lastAd=0,adTimes=[],jingleInterval=0,lastJingle=0;let now=null,next=null,previous=null,generation=0;
 
 const audioExt=[".mp3",".wav",".m4a"];
 function files(dir=MUSIC){try{return fs.readdirSync(dir).filter(x=>audioExt.includes(path.extname(x).toLowerCase()))}catch{return[]}}
@@ -16,7 +16,7 @@ function maybeJingle(){if(!running||live||paused||!jingleInterval)return false;c
 function maybePromotion(){if(!running||live||paused||!adInterval)return false;const nowMs=Date.now();if(nowMs-lastAd<adInterval*60000)return false;const a=files(ADS);if(!a.length)return false;lastAd=nowMs;const ad=item(a[Math.floor(Math.random()*a.length)],ADS);terminate();now="PROMOTION: "+ad.name;playOne(ad,generation);return true}
 function promotionTimer(){return adInterval>0?{enabled:true,intervalMinutes:adInterval,nextAt:new Date(lastAd+adInterval*60000).toISOString()}:{enabled:false,intervalMinutes:0,nextAt:null}}
 setInterval(()=>{if(!running||paused||live||!proc)return;if(maybeJingle())return;maybePromotion()},1000);
-function advance(){if(!running||paused||live)return;if(!load())return;if(maybeJingle())return;if(maybePromotion())return;let song=choose();if(!song&&playlist.length){index=0;song=choose()}if(!song){running=false;broadcast.stop("autodj");now=null;next=null;return}previous=now;now=song.name;const upcoming=crossfade>0?choose():null;next=upcoming?upcoming.name:pickNextPreview();if(upcoming)playCrossfade(song,upcoming,generation);else playOne(song,generation)}
+function advance(){if(!running||paused||live)return;if(!load())return;if(maybeJingle())return;if(maybePromotion())return;const song=choose();if(!song){running=false;broadcast.stop("autodj");now=null;next=null;return}previous=now;now=song.name;const upcoming=crossfade>0&&playlist.length>1?choose():null;next=upcoming?upcoming.name:pickNextPreview();if(upcoming)playCrossfade(song,upcoming,generation);else playOne(song,generation)}
 function startAutoDJ(){if(live)return false;if(running)return true;if(!load()||!broadcast.start("autodj"))return false;running=true;paused=false;lastAd=Date.now();lastJingle=Date.now();advance();return true}
 function stopAutoDJ(){running=false;paused=false;terminate();broadcast.stop("autodj");now=null;next=null;previous=null;return true}
 function startLive(){if(live)return true;wasRunningBeforeLive=running;if(running){running=false;terminate();broadcast.stop("autodj")}if(!broadcast.start("live")){if(wasRunningBeforeLive){running=true;broadcast.start("autodj");setTimeout(advance,100)}return false}live=true;return true}
