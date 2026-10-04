@@ -2089,7 +2089,7 @@ document.getElementById("jingleUpload").addEventListener("change",()=>uploadDJMe
    LIVE MICROPHONE
 ===================================================== */
 
-async function startLive(){
+async async function startLive(){
   if(liveMode) return;
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){
     alert("This browser does not support Live microphone recording.");
