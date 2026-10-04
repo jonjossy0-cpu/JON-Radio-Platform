@@ -308,7 +308,7 @@ server.on("upgrade", (req, socket, head) => {
 
   const token = url.searchParams.get("token") || "";
   if (!verifySession(token)) {
-    socket.write("HTTP/1.1 401 Unauthorized\\r\\nConnection: close\\r\\n\\r\\n");
+    socket.write("HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n");
     socket.destroy();
     return;
   }
