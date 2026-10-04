@@ -8,6 +8,7 @@ const stream = require("./radio/stream");
 const live = require("./radio/live");
 const http = require("http");
 const { WebSocketServer } = require("ws");
+const { URL } = require("url");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -229,7 +230,7 @@ const upload = multer({
     if (allowed.includes(file.mimetype) || ext === ".mp3" || ext === ".wav" || ext === ".m4a" || ext === ".m4a") {
       cb(null, true);
     } else {
-      cb(new Error("Only MP3 and WAV files are allowed."));
+      cb(new Error("Only MP3, WAV, and M4A audio files are allowed."));
     }
   }
 });
@@ -292,7 +293,22 @@ const server = http.createServer(app);
 const liveWSS = new WebSocketServer({ noServer: true });
 
 server.on("upgrade", (req, socket, head) => {
-  if (req.url !== "/live-mic") {
+  let url;
+  try {
+    url = new URL(req.url, "http://localhost");
+  } catch {
+    socket.destroy();
+    return;
+  }
+
+  if (url.pathname !== "/live-mic") {
+    socket.destroy();
+    return;
+  }
+
+  const token = url.searchParams.get("token") || "";
+  if (!verifySession(token)) {
+    socket.write("HTTP/1.1 401 Unauthorized\\r\\nConnection: close\\r\\n\\r\\n");
     socket.destroy();
     return;
   }
@@ -486,10 +502,12 @@ app.delete(
     }
 
     fs.unlinkSync(filePath);
+    autoDJ.removeMusic(filename);
 
     res.json({
       success: true,
-      message: "Music deleted."
+      message: "Music deleted.",
+      status: autoDJ.getStatus()
     });
 
   }
@@ -758,6 +776,28 @@ app.post("/api/autodj/queue", (req, res) => {
 app.post("/api/autodj/queue/clear", (req, res) => {
   autoDJ.clearQueue();
   res.json({ success: true, status: autoDJ.getStatus() });
+});
+
+app.get("/api/autodj/playlist", (req, res) => {
+  res.json({ success: true, playlist: autoDJ.getPlaylist() });
+});
+
+app.post("/api/autodj/playlist", (req, res) => {
+  const success = autoDJ.setPlaylist(req.body?.playlist);
+  res.status(success ? 200 : 400).json({
+    success,
+    playlist: autoDJ.getPlaylist(),
+    status: autoDJ.getStatus()
+  });
+});
+
+app.post("/api/autodj/promotion", (req, res) => {
+  const success = autoDJ.playPromotion();
+  res.status(success ? 200 : 409).json({
+    success,
+    message: success ? "Promotion is now playing." : "Promotion could not play. Start Auto DJ and upload an advertisement first.",
+    status: autoDJ.getStatus()
+  });
 });
 
 app.post("/api/autodj/settings", (req, res) => {
