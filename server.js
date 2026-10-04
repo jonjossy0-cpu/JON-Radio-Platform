@@ -698,6 +698,47 @@ app.get(
 );
 
 // =====================================
+// AUTO DJ ADVANCED CONTROLS
+// =====================================
+
+app.post("/api/autodj/next", (req, res) => {
+  const success = autoDJ.next();
+  res.json({ success, status: autoDJ.getStatus() });
+});
+
+app.post("/api/autodj/previous", (req, res) => {
+  const success = autoDJ.previous();
+  res.json({ success, status: autoDJ.getStatus() });
+});
+
+app.post("/api/autodj/queue", (req, res) => {
+  const success = autoDJ.enqueue(req.body.song);
+  res.json({ success, status: autoDJ.getStatus() });
+});
+
+app.post("/api/autodj/queue/clear", (req, res) => {
+  autoDJ.clearQueue();
+  res.json({ success: true, status: autoDJ.getStatus() });
+});
+
+app.post("/api/autodj/settings", (req, res) => {
+  const result = {};
+  if (req.body.shuffle !== undefined) result.shuffle = autoDJ.setShuffle(req.body.shuffle === true || req.body.shuffle === "true");
+  if (req.body.repeat !== undefined) result.repeat = autoDJ.setRepeat(req.body.repeat === true || req.body.repeat === "true");
+  if (req.body.crossfadeSeconds !== undefined) result.crossfade = autoDJ.setCrossfade(req.body.crossfadeSeconds);
+  if (req.body.adIntervalMinutes !== undefined) result.adInterval = autoDJ.setAdInterval(req.body.adIntervalMinutes);
+  res.json({ success: Object.values(result).every(Boolean), settings: result, status: autoDJ.getStatus() });
+});
+
+app.get("/api/autodj/history", (req, res) => {
+  res.json({ success: true, history: autoDJ.getStatus().history });
+});
+
+app.get("/api/autodj/media", (req, res) => {
+  res.json({ success: true, ads: autoDJ.getAdFiles(), jingles: autoDJ.getJingleFiles() });
+});
+
+// =====================================
 // ERROR HANDLER
 // =====================================
 
