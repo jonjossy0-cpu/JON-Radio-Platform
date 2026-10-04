@@ -758,7 +758,7 @@ body.dashboard-locked #loginGate{display:none !important;}
     <div class="form-group"><label>Shuffle</label><select id="djShuffle" onchange="saveDJSettings()"><option value="false">OFF</option><option value="true">ON</option></select></div>
     <div class="form-group"><label>Repeat</label><select id="djRepeat" onchange="saveDJSettings()"><option value="false">OFF</option><option value="true">ON</option></select></div>
     <div class="form-group"><label>Crossfade (seconds)</label><select id="djCrossfade" onchange="saveDJSettings()"><option>0</option><option selected>5</option><option>10</option><option>15</option></select></div>
-    <div class="form-group"><label>Advertisement interval</label><select id="djAdInterval" onchange="saveDJSettings()"><option value="0">OFF</option><option value="15">Every 15 min</option><option value="30">Every 30 min</option><option value="60">Every 60 min</option></select></div>
+    <div class="form-group"><label>Promotion Timer</label><select id="djAdInterval" onchange="saveDJSettings()"><option value="0">OFF</option><option value="15">Every 15 min</option><option value="30">Every 30 min</option><option value="60">Every 60 min</option></select></div>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
     <button class="light" onclick="clearDJQueue()">🧹 Clear Queue</button>
@@ -770,7 +770,7 @@ body.dashboard-locked #loginGate{display:none !important;}
 
 <!-- ================= ADVERTISEMENT ================= -->
 <div class="section">
-  <div class="section-title"><h2>📢 Advertisement Audio</h2><span id="adCount" class="status offline">0 ADS</span></div>
+  <div class="section-title"><h2>📢 Advertisement / Promotion Audio</h2><span id="adCount" class="status offline">0 ADS</span></div>
   <div class="live-help">Upload advertisement audio separately. Auto DJ inserts ads according to the selected timer.</div>
   <label class="primary" style="display:inline-block;padding:11px 15px;border-radius:9px;cursor:pointer;">
     + Upload Advertisement
