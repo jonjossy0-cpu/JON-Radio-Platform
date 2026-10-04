@@ -71,6 +71,16 @@ function verifySession(token) {
   }
 }
 
+const loginAttempts = new Map();
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const MAX_LOGIN_ATTEMPTS = 5;
+
+function clientIp(req) {
+  return String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown")
+    .split(",")[0]
+    .trim();
+}
+
 function requireAdmin(req, res, next) {
   const auth = req.headers.authorization || "";
   const token = auth.startsWith("Bearer ")
@@ -95,6 +105,21 @@ app.post("/api/auth/login", (req, res) => {
     });
   }
 
+  const ip = clientIp(req);
+  const now = Date.now();
+  const previous = loginAttempts.get(ip);
+
+  if (previous && now - previous.startedAt < LOGIN_WINDOW_MS && previous.count >= MAX_LOGIN_ATTEMPTS) {
+    return res.status(429).json({
+      success: false,
+      error: "Too many login attempts. Please try again later."
+    });
+  }
+
+  if (!previous || now - previous.startedAt >= LOGIN_WINDOW_MS) {
+    loginAttempts.set(ip, { startedAt: now, count: 0 });
+  }
+
   const password = String(req.body?.password || "");
 
   const provided = Buffer.from(password);
@@ -105,11 +130,17 @@ app.post("/api/auth/login", (req, res) => {
     crypto.timingSafeEqual(provided, expected);
 
   if (!valid) {
+    const attempt = loginAttempts.get(ip) || { startedAt: now, count: 0 };
+    attempt.count += 1;
+    loginAttempts.set(ip, attempt);
+
     return res.status(401).json({
       success: false,
       error: "Incorrect password."
     });
   }
+
+  loginAttempts.delete(ip);
 
   const token = signSession({
     iat: Date.now(),
