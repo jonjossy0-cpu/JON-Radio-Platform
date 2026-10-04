@@ -44,7 +44,11 @@ app.use((req, res, next) => {
 
 const crypto = require("crypto");
 
-const ADMIN_PASSWORD = process.env.JON_ADMIN_PASSWORD || "";
+// Accept the preferred Render variable and the legacy name.
+// The password is never sent to the client or stored in the repository.
+const ADMIN_PASSWORD = String(
+  process.env.JON_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || ""
+).trim();
 const SESSION_SECRET =
   process.env.JON_ADMIN_SESSION_SECRET ||
   (ADMIN_PASSWORD ? crypto.createHash("sha256").update(ADMIN_PASSWORD).digest("hex") : "");
