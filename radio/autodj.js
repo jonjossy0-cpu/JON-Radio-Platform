@@ -1,5 +1,5 @@
 const{spawn}=require("child_process");const fs=require("fs"),path=require("path");const broadcast=require("./broadcast");
-const MUSIC=path.join(__dirname,"..","music"),ADS=path.join(__dirname,"..","ads"),JINGLES=path.join(__dirname,"..","jingles");let FFMPEG_PATH=require("ffmpeg-static")||"ffmpeg";
+const MEDIA_ROOT=process.env.MEDIA_ROOT?path.resolve(process.env.MEDIA_ROOT):path.join(__dirname,"..");const MUSIC=path.join(MEDIA_ROOT,"music"),ADS=path.join(MEDIA_ROOT,"ads"),JINGLES=path.join(MEDIA_ROOT,"jingles");let FFMPEG_PATH=require("ffmpeg-static")||"ffmpeg";
 let running=false,paused=false,live=false,wasRunningBeforeLive=false,proc=null,pending=null,playlist=[],queue=[],index=0,shuffle=false,repeat=false,crossfade=0,gain=0,adInterval=0,lastAd=0,adTimes=[],jingleInterval=0,lastJingle=0;let now=null,next=null,previous=null,generation=0,breakRequest=null;
 const audioExt=[".mp3",".wav",".m4a"],DIR_CACHE_MS=2000,PREFETCH_BYTES=1024*1024,STARTUP_BUFFER_BYTES=64*1024;let dirCache=new Map();
 function files(dir=MUSIC){const key=dir,hit=dirCache.get(key),t=Date.now();if(hit&&t-hit.time<DIR_CACHE_MS)return hit.list.slice();let list=fs.readdirSync(dir).filter(x=>audioExt.includes(path.extname(x).toLowerCase()));dirCache.set(key,{time:t,list});return list.slice()}
