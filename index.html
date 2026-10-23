@@ -48,7 +48,7 @@ async function openLiveMic(){
   if(!window.isSecureContext&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1")throw Error("Microphone needs HTTPS.");
   if(!navigator.mediaDevices?.getUserMedia)throw Error("Open this page in Chrome and allow microphone permission.");
   // Use MediaRecorder/WebM, the audio format accepted by radio/live.js.
-  const attempts=[{audio:true},{audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}},{audio:{channelCount:{ideal:2},sampleRate:{ideal:48000},echoCancellation:false,noiseSuppression:false,autoGainControl:false}}];
+  const attempts=[{audio:{channelCount:{ideal:2},sampleRate:{ideal:48000},echoCancellation:false,noiseSuppression:false,autoGainControl:false}},{audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}},{audio:true}];
   let lastError=null;
   for(const constraints of attempts){
    try{mic=await navigator.mediaDevices.getUserMedia(constraints);break}
