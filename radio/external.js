@@ -5,9 +5,9 @@ let FFMPEG_PATH="ffmpeg";try{FFMPEG_PATH=require("ffmpeg-static")||FFMPEG_PATH}c
 const MEDIA_ROOT=process.env.MEDIA_ROOT?path.resolve(process.env.MEDIA_ROOT):path.join(__dirname,"..");
 const STATE_FILE=path.join(MEDIA_ROOT,"external-radio.json");
 const ALLOWED_PROTOCOLS=new Set(["http:","https:","rtmp:","rtmps:","rtsp:","rtsps:","udp:","srt:"]);
-let url="",activeUrl=null,enabled=false,proc=null,restartTimer=null,generation=0,lastError=null,startedAt=null,lastOutputAt=null,reconnects=0;
-function save(){try{fs.mkdirSync(MEDIA_ROOT,{recursive:true});fs.writeFileSync(STATE_FILE,JSON.stringify({url,enabled},null,2));return true}catch(e){lastError="Could not save external stream settings: "+e.message;return false}}
-function restore(){try{if(!fs.existsSync(STATE_FILE))return;const s=JSON.parse(fs.readFileSync(STATE_FILE,"utf8"));if(typeof s.url==="string")url=s.url;if(typeof s.enabled==="boolean")enabled=s.enabled}catch(e){lastError="Could not restore external stream settings: "+e.message}}
+let url="",urls=[],activeUrl=null,enabled=false,proc=null,restartTimer=null,generation=0,lastError=null,startedAt=null,lastOutputAt=null,reconnects=0;
+function save(){try{fs.mkdirSync(MEDIA_ROOT,{recursive:true});fs.writeFileSync(STATE_FILE,JSON.stringify({url,urls,enabled},null,2));return true}catch(e){lastError="Could not save external stream settings: "+e.message;return false}}
+function restore(){try{if(!fs.existsSync(STATE_FILE))return;const s=JSON.parse(fs.readFileSync(STATE_FILE,"utf8"));if(Array.isArray(s.urls))urls=[...new Set(s.urls.filter(validUrl).map(v=>String(v).trim()))];if(typeof s.url==="string"&&validUrl(s.url))url=s.url;if(url&&!urls.includes(url))urls.unshift(url);if(typeof s.enabled==="boolean")enabled=s.enabled}catch(e){lastError="Could not restore external stream settings: "+e.message}}
 restore();
 function validUrl(v){try{const u=new URL(String(v||"").trim());return ALLOWED_PROTOCOLS.has(u.protocol)&&Boolean(u.hostname)}catch{return false}}
 function launch(g){
@@ -38,7 +38,7 @@ function start(nextUrl){
  const g=++generation;clearTimeout(restartTimer);launch(g);return {success:true,status:status()}
 }
 function stop(){enabled=false;activeUrl=null;generation++;clearTimeout(restartTimer);restartTimer=null;const p=proc;proc=null;if(p){try{p.kill("SIGTERM")}catch{}setTimeout(()=>{try{if(p.exitCode===null)p.kill("SIGKILL")}catch{}},1500).unref?.()}broadcast.stop("external");save();return true}
-function setUrl(nextUrl){const value=String(nextUrl||"").trim();if(!validUrl(value))return {success:false,error:"Enter a valid radio stream URL (HTTP, HTTPS, RTMP, RTMPS, RTSP, RTSPS, UDP or SRT)."};const previous=url;url=value;if(!save()){url=previous;return {success:false,error:lastError}}return {success:true,settings:status()}}
-function status(){return{enabled,active:Boolean(enabled&&proc&&!proc.killed&&lastOutputAt&&Date.now()-lastOutputAt<30000),url,startedAt,lastOutputAt:lastOutputAt?new Date(lastOutputAt).toISOString():null,reconnects,lastError,source:broadcast.status().source}}
+function setUrl(nextUrl){const value=String(nextUrl||"").trim();if(!validUrl(value))return {success:false,error:"Enter a valid radio stream URL (HTTP, HTTPS, RTMP, RTMPS, RTSP, RTSPS, UDP or SRT)."};const previous=url,previousUrls=urls.slice();url=value;if(!urls.includes(value))urls.push(value);if(!save()){url=previous;urls=previousUrls;return {success:false,error:lastError}}return {success:true,settings:status()}}
+function selectUrl(nextUrl){const value=String(nextUrl||"").trim();if(!urls.includes(value))return {success:false,error:"Choose a link from the saved radio links list."};url=value;if(!save())return {success:false,error:lastError};return {success:true,settings:status()}}\nfunction status(){return{enabled,active:Boolean(enabled&&proc&&!proc.killed&&lastOutputAt&&Date.now()-lastOutputAt<30000),url,urls:[...urls],startedAt,lastOutputAt:lastOutputAt?new Date(lastOutputAt).toISOString():null,reconnects,lastError,source:broadcast.status().source}}
 function shouldAutoStart(){return enabled&&validUrl(url)}
-module.exports={start,stop,setUrl,shouldAutoStart,status};
+module.exports={start,stop,setUrl,selectUrl,shouldAutoStart,status};
