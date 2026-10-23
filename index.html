@@ -74,7 +74,7 @@ async function openLiveMic(){
   if(audioCtx.state==="suspended")await audioCtx.resume();
   const source=audioCtx.createMediaStreamSource(mic);
   analyser=audioCtx.createAnalyser();analyser.fftSize=512;source.connect(analyser);
-  rec=new MediaRecorder(mic,{mimeType:type,audioBitsPerSecond:192000});
+  rec=new MediaRecorder(mic,{mimeType:type,audioBitsPerSecond:256000});
   socket=new WebSocket(API.replace(/^http/,"ws")+"/live-mic");socket.binaryType="arraybuffer";
   socket.onopen=()=>{
    rec.ondataavailable=e=>{if(e.data?.size&&socket?.readyState===1){try{socket.send(e.data)}catch{}}};
