@@ -53,7 +53,7 @@ async function openLiveMic(){
  try{
   if(!window.isSecureContext&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1")throw Error("Microphone needs HTTPS.");
   if(!navigator.mediaDevices?.getUserMedia)throw Error("Open this page in Chrome and allow microphone permission.");
-  const attempts=[{audio:{channelCount:{ideal:2},sampleRate:{ideal:48000},echoCancellation:false,noiseSuppression:true,autoGainControl:false}},{audio:{echoCancellation:false,noiseSuppression:true,autoGainControl:false}},{audio:true}];
+  const attempts=[{audio:{channelCount:{ideal:2},sampleRate:{ideal:48000},echoCancellation:false,noiseSuppression:false,autoGainControl:false}},{audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}},{audio:true}];
   let lastError=null;
   for(const constraints of attempts){
    try{mic=await navigator.mediaDevices.getUserMedia(constraints);break}
@@ -93,11 +93,9 @@ async function openLiveMic(){
     if(!socket||socket.readyState!==1||socket.bufferedAmount>1048576)return;
     const input=e.inputBuffer,left=input.getChannelData(0),right=input.numberOfChannels>1?input.getChannelData(1):left;
     const frames=input.length,pcm=new Int16Array(frames*2);
-    // Block-level soft noise gate reduces quiet-room hiss without muting normal speech.
-    let energy=0;for(let i=0;i<frames;i++){energy+=left[i]*left[i]+right[i]*right[i]}
-    const rms=Math.sqrt(energy/(frames*2)),gate=rms<0.0045?0:(rms<0.009?(rms-0.0045)/0.0045:1);
+    // Avoid block-level gating: it can create intermittent clipping/chattering on speech.
     for(let i=0;i<frames;i++){
-     const l=Math.max(-1,Math.min(1,left[i]*gate)),r=Math.max(-1,Math.min(1,right[i]*gate));
+     const l=Math.max(-1,Math.min(1,left[i])),r=Math.max(-1,Math.min(1,right[i]));
      pcm[i*2]=l<0?l*32768:l*32767;pcm[i*2+1]=r<0?r*32768:r*32767;
     }
     try{socket.send(pcm.buffer)}catch{}
