@@ -59,13 +59,33 @@ async function openLiveMic(){
   let lastMicError=null;
   for(const constraints of attempts){
    try{mic=await navigator.mediaDevices.getUserMedia(constraints);break}
-   catch(e){lastMicError=e;if(e?.name==="NotAllowedError"||e?.name==="SecurityError")throw Error("Microphone permission is blocked. In Chrome site settings, allow Microphone, then reload.");}
+   catch(e){lastMicError=e;if(e?.name==="NotAllowedError"||e?.name==="SecurityError")throw Error("Microphone permission is blocked. In Android Settings, allow microphone access for your browser, then allow Microphone for this site and reload.");}
+  }
+  // Some Android browser builds fail the default-device request even when an audio input is listed.
+  // If that happens, enumerate inputs and retry each real device ID before reporting failure.
+  if(!mic){
+   try{
+    const devices=await navigator.mediaDevices.enumerateDevices();
+    const inputs=devices.filter(d=>d.kind==="audioinput"&&d.deviceId);
+    for(const device of inputs){
+     try{mic=await navigator.mediaDevices.getUserMedia({audio:{deviceId:{exact:device.deviceId}}});break}
+     catch(e){lastMicError=e;if(e?.name==="NotAllowedError"||e?.name==="SecurityError")throw e;}
+    }
+   }catch(e){
+    if(e?.name==="NotAllowedError"||e?.name==="SecurityError")throw Error("Microphone permission is blocked. Allow microphone access in Android Settings and Chrome site settings, then reload.");
+    if(!lastMicError)lastMicError=e;
+   }
   }
   if(!mic){
    const errName=lastMicError?.name||"";
    const errText=String(lastMicError?.message||lastMicError||"");
-   if(/request not found|device not found|no device/i.test(errText)||errName==="NotFoundError"||errName==="DevicesNotFoundError")throw Error("Phone/browser cannot find an available microphone. Close other apps using the mic, allow Microphone permission for this site, then reload and try again.");
-   if(errName==="NotReadableError"||errName==="TrackStartError")throw Error("Microphone is busy or blocked by another app. Close other apps using the microphone, then try again.");
+   if(/request(ed)? device not found|request not found|device not found|no device/i.test(errText)||errName==="NotFoundError"||errName==="DevicesNotFoundError"){
+    let inputCount=0;try{inputCount=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==="audioinput").length}catch{}
+    throw Error(inputCount===0
+     ?"The browser reports no microphone input. Check Android Settings > Privacy > Microphone access is ON, allow microphone for Chrome, close calls/recording apps, then reload this page."
+     :"The browser sees a microphone but cannot open it. Close calls/recording apps, check Android microphone access and Chrome site permission, then reload and try again.");
+   }
+   if(errName==="NotReadableError"||errName==="TrackStartError")throw Error("Microphone is busy or blocked by another app. Close calls, voice recorder and other apps using the microphone, then try again.");
    throw Error("Could not open microphone ("+(errName||"browser error")+"): "+errText);
   }
   audioCtx=new AudioContextClass({latencyHint:"interactive",sampleRate:48000});
