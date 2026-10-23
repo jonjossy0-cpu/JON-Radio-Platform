@@ -14,7 +14,7 @@ function launch(g){
  if(g!==generation||!enabled||!(activeUrl||url))return;
  const inputUrl=activeUrl||url;
  const args=["-hide_banner","-loglevel","warning","-nostdin","-rw_timeout","15000000"];
- if(/^https?:/i.test(inputUrl))args.push("-reconnect","1","-reconnect_streamed","1","-reconnect_at_eof","1","-reconnect_on_network_error","1","-reconnect_on_http_error","4xx,5xx","-reconnect_delay_max","10");
+ if(/^https?:/i.test(inputUrl))args.push("-user_agent","Mozilla/5.0 (compatible; JON-Radio-Platform/2.0)","-headers","Accept: */*\r\nIcy-MetaData: 1\r\n","-reconnect","1","-reconnect_streamed","1","-reconnect_at_eof","1","-reconnect_on_network_error","1","-reconnect_on_http_error","4xx,5xx","-reconnect_delay_max","10");
  args.push("-i",inputUrl,"-vn","-sn","-dn","-ac","2","-ar","44100","-b:a","128k","-c:a","libmp3lame","-f","mp3","pipe:1");
  let p;
  try{p=spawn(FFMPEG_PATH,args,{stdio:["ignore","pipe","pipe"]})}catch(e){lastError="FFmpeg start failed: "+e.message;schedule(g);return}
