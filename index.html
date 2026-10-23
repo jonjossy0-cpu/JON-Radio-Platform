@@ -43,81 +43,48 @@ $("startExternal").onclick=async()=>{const url=$("externalUrl").value.trim();try
 $("stopExternal").onclick=async()=>{try{await api("/api/external-stream/stop",{method:"POST"});$("externalStatus").textContent="External stream OFF";toast("External stream stopped");refresh()}catch(e){toast(e.message)}};
 async function openLiveMic(){
  if(socket)return;
- let audioNode=null,streamInfo=$("liveText");
+ let streamInfo=$("liveText");
  try{
-  if(!window.isSecureContext&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1")throw Error("Microphone needs HTTPS. Open the secure JON dashboard link.");
-  if(!navigator.mediaDevices?.getUserMedia)throw Error("This browser cannot access the microphone. Open the page in Chrome and allow Microphone permission.");
-  const AudioContextClass=window.AudioContext||window.webkitAudioContext;
-  if(!AudioContextClass)throw Error("This browser does not support live audio. Update Chrome and try again.");
-  // Request the default device first: some Android browsers return "Request not found"
-  // when advanced audio constraints are included in the initial permission request.
-  const attempts=[
-   {audio:true},
-   {audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}},
-   {audio:{channelCount:{ideal:2},sampleRate:{ideal:48000},sampleSize:{ideal:24},echoCancellation:false,noiseSuppression:false,autoGainControl:false}}
-  ];
-  let lastMicError=null;
+  if(!window.isSecureContext&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1")throw Error("Microphone needs HTTPS.");
+  if(!navigator.mediaDevices?.getUserMedia)throw Error("Open this page in Chrome and allow microphone permission.");
+  // Use MediaRecorder/WebM, the audio format accepted by radio/live.js.
+  const attempts=[{audio:true},{audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}},{audio:{channelCount:{ideal:2},sampleRate:{ideal:48000},echoCancellation:false,noiseSuppression:false,autoGainControl:false}}];
+  let lastError=null;
   for(const constraints of attempts){
    try{mic=await navigator.mediaDevices.getUserMedia(constraints);break}
-   catch(e){lastMicError=e;if(e?.name==="NotAllowedError"||e?.name==="SecurityError")throw Error("Microphone permission is blocked. In Android Settings, allow microphone access for your browser, then allow Microphone for this site and reload.");}
+   catch(e){lastError=e;if(e?.name==="NotAllowedError"||e?.name==="SecurityError")throw Error("Microphone permission is blocked. Allow microphone access in Android Settings and Chrome site settings, then reload.");}
   }
-  // Some Android browser builds fail the default-device request even when an audio input is listed.
-  // If that happens, enumerate inputs and retry each real device ID before reporting failure.
   if(!mic){
-   try{
-    const devices=await navigator.mediaDevices.enumerateDevices();
-    const inputs=devices.filter(d=>d.kind==="audioinput"&&d.deviceId);
-    for(const device of inputs){
-     try{mic=await navigator.mediaDevices.getUserMedia({audio:{deviceId:{exact:device.deviceId}}});break}
-     catch(e){lastMicError=e;if(e?.name==="NotAllowedError"||e?.name==="SecurityError")throw e;}
-    }
-   }catch(e){
-    if(e?.name==="NotAllowedError"||e?.name==="SecurityError")throw Error("Microphone permission is blocked. Allow microphone access in Android Settings and Chrome site settings, then reload.");
-    if(!lastMicError)lastMicError=e;
+   const devices=await navigator.mediaDevices.enumerateDevices().catch(()=>[]);
+   for(const d of devices.filter(x=>x.kind==="audioinput"&&x.deviceId)){
+    try{mic=await navigator.mediaDevices.getUserMedia({audio:{deviceId:{exact:d.deviceId}}});break}
+    catch(e){lastError=e;if(e?.name==="NotAllowedError"||e?.name==="SecurityError")break;}
    }
   }
   if(!mic){
-   const errName=lastMicError?.name||"";
-   const errText=String(lastMicError?.message||lastMicError||"");
-   if(/request(ed)? device not found|request not found|device not found|no device/i.test(errText)||errName==="NotFoundError"||errName==="DevicesNotFoundError"){
-    let inputCount=0;try{inputCount=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==="audioinput").length}catch{}
-    throw Error(inputCount===0
-     ?"The browser reports no microphone input. Check Android Settings > Privacy > Microphone access is ON, allow microphone for Chrome, close calls/recording apps, then reload this page."
-     :"The browser sees a microphone but cannot open it. Close calls/recording apps, check Android microphone access and Chrome site permission, then reload and try again.");
-   }
-   if(errName==="NotReadableError"||errName==="TrackStartError")throw Error("Microphone is busy or blocked by another app. Close calls, voice recorder and other apps using the microphone, then try again.");
-   throw Error("Could not open microphone ("+(errName||"browser error")+"): "+errText);
+   const msg=String(lastError?.message||lastError||"");
+   if(lastError?.name==="NotReadableError"||lastError?.name==="TrackStartError")throw Error("Microphone is busy. Close calls or recording apps and try again.");
+   if(lastError?.name==="NotFoundError"||lastError?.name==="DevicesNotFoundError"||/device not found|request not found/i.test(msg))throw Error("Android/browser cannot open a microphone input. Check Android microphone access and Chrome site permission; close calls/recording apps, then reload.");
+   throw Error("Could not open microphone ("+(lastError?.name||"browser error")+"): "+msg);
   }
-  audioCtx=new AudioContextClass({latencyHint:"interactive",sampleRate:48000});
+  if(!window.MediaRecorder)throw Error("This browser does not support MediaRecorder.");
+  const type=["audio/webm;codecs=opus","audio/webm"].find(t=>MediaRecorder.isTypeSupported(t));
+  if(!type)throw Error("This browser cannot record WebM audio required by the live server. Open this page in current Chrome.");
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"interactive"});
   if(audioCtx.state==="suspended")await audioCtx.resume();
-  const actual=mic.getAudioTracks()[0]?.getSettings?.()||{};
   const source=audioCtx.createMediaStreamSource(mic);
-  analyser=audioCtx.createAnalyser();analyser.fftSize=1024;source.connect(analyser);
-  const sendPCM=buffer=>{
-   if(!socket||socket.readyState!==1||socket.bufferedAmount>1048576)return;
-   try{socket.send(buffer)}catch{}
-  };
-  if(audioCtx.audioWorklet&&typeof AudioWorkletNode!=="undefined"){
-   const workletCode=`class JONPCM extends AudioWorkletProcessor{constructor(){super();this.size=960;this.left=new Float32Array(this.size);this.right=new Float32Array(this.size);this.used=0}process(inputs){const input=inputs[0],left=input[0],right=input[1]||input[0];if(left&&left.length){for(let i=0;i<left.length;i++){this.left[this.used]=left[i];this.right[this.used]=right[i];this.used++;if(this.used===this.size){const pcm=new Int16Array(this.size*2);for(let j=0;j<this.size;j++){const l=Math.max(-1,Math.min(1,this.left[j])),r=Math.max(-1,Math.min(1,this.right[j]));pcm[j*2]=l<0?l*32768:l*32767;pcm[j*2+1]=r<0?r*32768:r*32767}this.port.postMessage(pcm.buffer,[pcm.buffer]);this.used=0}}}return true}}registerProcessor("jon-pcm",JONPCM);`;
-   const blob=new Blob([workletCode],{type:"application/javascript"}),moduleUrl=URL.createObjectURL(blob);
-   try{await audioCtx.audioWorklet.addModule(moduleUrl)}finally{URL.revokeObjectURL(moduleUrl)}
-   audioNode=new AudioWorkletNode(audioCtx,"jon-pcm",{numberOfInputs:1,numberOfOutputs:1,channelCount:2,channelCountMode:"explicit",channelInterpretation:"speakers"});
-   audioNode.port.onmessage=e=>sendPCM(e.data);
-   const silent=audioCtx.createGain();silent.gain.value=0;audioNode.connect(silent);silent.connect(audioCtx.destination);source.connect(audioNode);
-  }else{
-   const processor=audioCtx.createScriptProcessor(2048,2,2),silent=audioCtx.createGain();silent.gain.value=0;
-   processor.onaudioprocess=e=>{
-    const input=e.inputBuffer,left=input.getChannelData(0),right=input.numberOfChannels>1?input.getChannelData(1):left,pcm=new Int16Array(left.length*2);
-    for(let i=0;i<left.length;i++){const l=Math.max(-1,Math.min(1,left[i])),r=Math.max(-1,Math.min(1,right[i]));pcm[i*2]=l<0?l*32768:l*32767;pcm[i*2+1]=r<0?r*32768:r*32767}
-    sendPCM(pcm.buffer);
-   };
-   source.connect(processor);processor.connect(silent);silent.connect(audioCtx.destination);audioNode=processor;
-  }
+  analyser=audioCtx.createAnalyser();analyser.fftSize=512;source.connect(analyser);
+  rec=new MediaRecorder(mic,{mimeType:type,audioBitsPerSecond:192000});
   socket=new WebSocket(API.replace(/^http/,"ws")+"/live-mic");socket.binaryType="arraybuffer";
-  socket.onopen=()=>{streamInfo.textContent="🔴 MICROPHONE ON — STEREO PCM / 48 kHz";startMeter()};
+  socket.onopen=()=>{
+   rec.ondataavailable=e=>{if(e.data?.size&&socket?.readyState===1){try{socket.send(e.data)}catch{}}};
+   rec.onerror=()=>{toast("Microphone recorder error.");try{socket?.close()}catch{}};
+   rec.start(1000);
+   streamInfo.textContent="🔴 MICROPHONE ON — WEBM/OPUS LIVE";
+   startMeter();
+  };
   socket.onerror=()=>toast("Live connection failed. Check the server and internet connection.");
   socket.onclose=()=>cleanup();
-  window.__jonMicNode=audioNode;window.__jonMicSettings=actual;
  }catch(e){
   const message=String(e?.message||e||"Unknown microphone error");
   toast("Microphone error: "+message);
