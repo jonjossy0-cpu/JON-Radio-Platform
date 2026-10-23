@@ -49,17 +49,25 @@ async function openLiveMic(){
   if(!navigator.mediaDevices?.getUserMedia)throw Error("This browser cannot access the microphone. Open the page in Chrome and allow Microphone permission.");
   const AudioContextClass=window.AudioContext||window.webkitAudioContext;
   if(!AudioContextClass)throw Error("This browser does not support live audio. Update Chrome and try again.");
+  // Request the default device first: some Android browsers return "Request not found"
+  // when advanced audio constraints are included in the initial permission request.
   const attempts=[
-   {audio:{channelCount:{ideal:2},sampleRate:{ideal:48000},sampleSize:{ideal:24},echoCancellation:false,noiseSuppression:false,autoGainControl:false}},
+   {audio:true},
    {audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}},
-   {audio:true}
+   {audio:{channelCount:{ideal:2},sampleRate:{ideal:48000},sampleSize:{ideal:24},echoCancellation:false,noiseSuppression:false,autoGainControl:false}}
   ];
   let lastMicError=null;
   for(const constraints of attempts){
    try{mic=await navigator.mediaDevices.getUserMedia(constraints);break}
    catch(e){lastMicError=e;if(e?.name==="NotAllowedError"||e?.name==="SecurityError")throw Error("Microphone permission is blocked. In Chrome site settings, allow Microphone, then reload.");}
   }
-  if(!mic)throw Error(lastMicError?.message||"No microphone was found. Connect/enable a microphone and allow browser permission.");
+  if(!mic){
+   const errName=lastMicError?.name||"";
+   const errText=String(lastMicError?.message||lastMicError||"");
+   if(/request not found|device not found|no device/i.test(errText)||errName==="NotFoundError"||errName==="DevicesNotFoundError")throw Error("Phone/browser cannot find an available microphone. Close other apps using the mic, allow Microphone permission for this site, then reload and try again.");
+   if(errName==="NotReadableError"||errName==="TrackStartError")throw Error("Microphone is busy or blocked by another app. Close other apps using the microphone, then try again.");
+   throw Error("Could not open microphone ("+(errName||"browser error")+"): "+errText);
+  }
   audioCtx=new AudioContextClass({latencyHint:"interactive",sampleRate:48000});
   if(audioCtx.state==="suspended")await audioCtx.resume();
   const actual=mic.getAudioTracks()[0]?.getSettings?.()||{};
