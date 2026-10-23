@@ -1,7 +1,7 @@
 const{spawn}=require("child_process");
 const fs=require("fs"),path=require("path");
 const broadcast=require("./broadcast");
-let FFMPEG_PATH="ffmpeg";try{FFMPEG_PATH=require("ffmpeg-static")||FFMPEG_PATH}catch{}
+let FFMPEG_PATH=process.env.FFMPEG_PATH||"/usr/bin/ffmpeg";if(!process.env.FFMPEG_PATH&&!fs.existsSync(FFMPEG_PATH)){FFMPEG_PATH="ffmpeg";try{FFMPEG_PATH=require("ffmpeg-static")||FFMPEG_PATH}catch{}}
 const MEDIA_ROOT=process.env.MEDIA_ROOT?path.resolve(process.env.MEDIA_ROOT):path.join(__dirname,"..");
 const STATE_FILE=path.join(MEDIA_ROOT,"external-radio.json");
 const ALLOWED_PROTOCOLS=new Set(["http:","https:","rtmp:","rtmps:","rtsp:","rtsps:","udp:","srt:"]);
