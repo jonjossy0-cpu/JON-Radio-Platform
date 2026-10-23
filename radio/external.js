@@ -32,6 +32,6 @@ function start(nextUrl){
 }
 function stop(){enabled=false;generation++;clearTimeout(restartTimer);restartTimer=null;const p=proc;proc=null;if(p){try{p.kill("SIGTERM")}catch{}setTimeout(()=>{try{if(p.exitCode===null)p.kill("SIGKILL")}catch{}},1500).unref?.()}broadcast.stop("external");save();return true}
 function setUrl(nextUrl){if(!validUrl(nextUrl))return {success:false,error:"Enter a valid HTTP/HTTPS M3U8 stream URL."};url=String(nextUrl).trim();save();return {success:true,settings:status()}}
-function status(){return{enabled,active:Boolean(enabled&&proc&&!proc.killed&&lastOutputAt&&Date.now()-Date.parse(lastOutputAt)<30000),url,startedAt,lastOutputAt:lastOutputAt?new Date(lastOutputAt).toISOString():null,reconnects,lastError,source:broadcast.status().source}}
+function status(){return{enabled,active:Boolean(enabled&&proc&&!proc.killed&&lastOutputAt&&Date.now()-lastOutputAt<30000),url,startedAt,lastOutputAt:lastOutputAt?new Date(lastOutputAt).toISOString():null,reconnects,lastError,source:broadcast.status().source}}
 function shouldAutoStart(){return enabled&&validUrl(url)}
 module.exports={start,stop,setUrl,status,shouldAutoStart};
