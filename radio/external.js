@@ -12,7 +12,10 @@ restore();
 function validUrl(v){try{const u=new URL(String(v||"").trim());return ALLOWED_PROTOCOLS.has(u.protocol)&&Boolean(u.hostname)}catch{return false}}
 function launch(g){
  if(g!==generation||!enabled||!(activeUrl||url))return;
- const args=["-hide_banner","-loglevel","warning","-nostdin","-rw_timeout","15000000","-reconnect","1","-reconnect_streamed","1","-reconnect_at_eof","1","-reconnect_on_network_error","1","-reconnect_on_http_error","4xx,5xx","-reconnect_delay_max","10","-i",activeUrl||url,"-vn","-sn","-dn","-ac","2","-ar","44100","-b:a","128k","-c:a","libmp3lame","-f","mp3","pipe:1"];
+ const inputUrl=activeUrl||url;
+ const args=["-hide_banner","-loglevel","warning","-nostdin","-rw_timeout","15000000"];
+ if(/^https?:/i.test(inputUrl))args.push("-reconnect","1","-reconnect_streamed","1","-reconnect_at_eof","1","-reconnect_on_network_error","1","-reconnect_on_http_error","4xx,5xx","-reconnect_delay_max","10");
+ args.push("-i",inputUrl,"-vn","-sn","-dn","-ac","2","-ar","44100","-b:a","128k","-c:a","libmp3lame","-f","mp3","pipe:1");
  let p;
  try{p=spawn(FFMPEG_PATH,args,{stdio:["ignore","pipe","pipe"]})}catch(e){lastError="FFmpeg start failed: "+e.message;schedule(g);return}
  proc=p;let stderr="";
@@ -30,7 +33,7 @@ function start(nextUrl){
  if(broadcast.status().source!=="idle"&&broadcast.status().source!=="external")return {success:false,error:"Another source is running. Stop Auto DJ or Live before starting the external stream."};
  if(proc){const old=proc;proc=null;try{old.kill("SIGTERM")}catch{}}clearTimeout(restartTimer);restartTimer=null;
  enabled=true;activeUrl=url;lastError=null;startedAt=new Date().toISOString();lastOutputAt=null;reconnects=0;
- if(!save())return {success:false,error:lastError};
+ if(!save()){enabled=false;activeUrl=null;return {success:false,error:lastError}}
  if(!broadcast.start("external")){enabled=false;save();return {success:false,error:"The public radio stream is busy. Stop the active source first."}}
  const g=++generation;clearTimeout(restartTimer);launch(g);return {success:true,status:status()}
 }
@@ -38,4 +41,4 @@ function stop(){enabled=false;activeUrl=null;generation++;clearTimeout(restartTi
 function setUrl(nextUrl){const value=String(nextUrl||"").trim();if(!validUrl(value))return {success:false,error:"Enter a valid radio stream URL (HTTP, HTTPS, RTMP, RTMPS, RTSP, RTSPS, UDP or SRT)."};const previous=url;url=value;if(!save()){url=previous;return {success:false,error:lastError}}return {success:true,settings:status()}}
 function status(){return{enabled,active:Boolean(enabled&&proc&&!proc.killed&&lastOutputAt&&Date.now()-lastOutputAt<30000),url,startedAt,lastOutputAt:lastOutputAt?new Date(lastOutputAt).toISOString():null,reconnects,lastError,source:broadcast.status().source}}
 function shouldAutoStart(){return enabled&&validUrl(url)}
-module.exports={start,stop,setUrl,status,shouldAutoStart};
+module.exports={start,stop,setUrl,shouldAutoStart,status};
