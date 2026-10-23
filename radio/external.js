@@ -23,9 +23,12 @@ function launch(g){
 function schedule(g){if(g!==generation||!enabled)return;clearTimeout(restartTimer);reconnects++;const delay=Math.min(30000,2000*Math.pow(2,Math.min(reconnects-1,4)));restartTimer=setTimeout(()=>launch(g),delay)}
 const watchdog=setInterval(()=>{if(!enabled||!proc)return;const reference=lastOutputAt||Date.parse(startedAt||"");if(reference&&Date.now()-reference>30000){lastError="No audio received from source for 30 seconds; reconnecting.";try{proc.kill("SIGTERM")}catch{}}},5000);watchdog.unref?.();
 function start(nextUrl){
+ const previousUrl=url;
  if(nextUrl!==undefined){if(!validUrl(nextUrl))return {success:false,error:"Enter a valid HTTP/HTTPS M3U8 stream URL."};url=String(nextUrl).trim()}
  if(!validUrl(url))return {success:false,error:"Enter and save a valid HTTP/HTTPS M3U8 stream URL first."};
+ if(enabled&&broadcast.status().source==="external"&&proc&&url===previousUrl)return {success:true,status:status()};
  if(broadcast.status().source!=="idle"&&broadcast.status().source!=="external")return {success:false,error:"Another source is running. Stop Auto DJ or Live before starting the external stream."};
+ if(proc){const old=proc;proc=null;try{old.kill("SIGTERM")}catch{}}clearTimeout(restartTimer);restartTimer=null;
  enabled=true;lastError=null;startedAt=new Date().toISOString();lastOutputAt=null;reconnects=0;save();
  if(!broadcast.start("external")){enabled=false;save();return {success:false,error:"The public radio stream is busy. Stop the active source first."}}
  const g=++generation;clearTimeout(restartTimer);launch(g);return {success:true,status:status()}
