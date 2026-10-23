@@ -75,11 +75,16 @@ async function openLiveMic(){
   audioCtx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000,latencyHint:"interactive"});
   if(audioCtx.state==="suspended")await audioCtx.resume();
   const source=audioCtx.createMediaStreamSource(mic);
-  analyser=audioCtx.createAnalyser();analyser.fftSize=512;source.connect(analyser);
-  // Send uncompressed stereo PCM to the server; encode to MP3 only once on the server.
+  // Gentle live-mic cleanup: remove low-frequency rumble and tame sudden peaks.
+  const micHighPass=audioCtx.createBiquadFilter();micHighPass.type="highpass";micHighPass.frequency.value=85;micHighPass.Q.value=0.707;
+  const micLowPass=audioCtx.createBiquadFilter();micLowPass.type="lowpass";micLowPass.frequency.value=14500;micLowPass.Q.value=0.707;
+  const micCompressor=audioCtx.createDynamicsCompressor();micCompressor.threshold.value=-20;micCompressor.knee.value=12;micCompressor.ratio.value=2.5;micCompressor.attack.value=0.008;micCompressor.release.value=0.18;
+  source.connect(micHighPass);micHighPass.connect(micLowPass);micLowPass.connect(micCompressor);
+  analyser=audioCtx.createAnalyser();analyser.fftSize=512;micCompressor.connect(analyser);
+  // Send cleaned stereo PCM to the server; encode to MP3 only once on the server.
   micProcessor=audioCtx.createScriptProcessor(4096,Math.max(1,mic.getAudioTracks()[0]?.getSettings?.().channelCount||1),2);
   silenceGain=audioCtx.createGain();silenceGain.gain.value=0;
-  source.connect(micProcessor);micProcessor.connect(silenceGain);silenceGain.connect(audioCtx.destination);
+  micCompressor.connect(micProcessor);micProcessor.connect(silenceGain);silenceGain.connect(audioCtx.destination);
   socket=new WebSocket(API.replace(/^http/,"ws")+"/live-mic");socket.binaryType="arraybuffer";
   socket.onopen=()=>{
    try{socket.send(JSON.stringify({type:"pcm",sampleRate:audioCtx.sampleRate,channels:2,format:"s16le"}))}
@@ -88,8 +93,11 @@ async function openLiveMic(){
     if(!socket||socket.readyState!==1||socket.bufferedAmount>1048576)return;
     const input=e.inputBuffer,left=input.getChannelData(0),right=input.numberOfChannels>1?input.getChannelData(1):left;
     const frames=input.length,pcm=new Int16Array(frames*2);
+    // Block-level soft noise gate reduces quiet-room hiss without muting normal speech.
+    let energy=0;for(let i=0;i<frames;i++){energy+=left[i]*left[i]+right[i]*right[i]}
+    const rms=Math.sqrt(energy/(frames*2)),gate=rms<0.0045?0:(rms<0.009?(rms-0.0045)/0.0045:1);
     for(let i=0;i<frames;i++){
-     const l=Math.max(-1,Math.min(1,left[i])),r=Math.max(-1,Math.min(1,right[i]));
+     const l=Math.max(-1,Math.min(1,left[i]*gate)),r=Math.max(-1,Math.min(1,right[i]*gate));
      pcm[i*2]=l<0?l*32768:l*32767;pcm[i*2+1]=r<0?r*32768:r*32767;
     }
     try{socket.send(pcm.buffer)}catch{}
