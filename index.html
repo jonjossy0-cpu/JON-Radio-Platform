@@ -82,7 +82,7 @@ async function openLiveMic(){
    rec.ondataavailable=e=>{if(e.data?.size&&socket?.readyState===1){try{socket.send(e.data)}catch{}}};
    rec.onerror=()=>{toast("Microphone recorder error.");try{socket?.close()}catch{}};
    rec.start(1000);
-   streamInfo.textContent="🔴 MICROPHONE ON — 48 kHz STEREO WEBM/OPUS • "+Math.round((rec.audioBitsPerSecond||256000)/1000)+" kbps requested";
+   streamInfo.textContent="🔴 MIC ON • WEBM/OPUS 256 kbps TARGET • 48 kHz STEREO • MP3 OUTPUT 320 kbps STEREO";
    startMeter();
   };
   socket.onerror=()=>toast("Live connection failed. Check the server and internet connection.");
