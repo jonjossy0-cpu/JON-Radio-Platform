@@ -20,12 +20,12 @@ function launch(g){
  try{p=spawn(FFMPEG_PATH,args,{stdio:["ignore","pipe","pipe"]})}catch(e){lastError="FFmpeg start failed: "+e.message;schedule(g);return}
  proc=p;procStartedAt=Date.now();lastOutputAt=null;lastStderr="";
  p.stdout.on("data",chunk=>{if(g!==generation||!enabled)return;lastOutputAt=Date.now();lastError=null;reconnects=0;broadcast.broadcast(chunk)});
- p.stderr.on("data",chunk=>{lastStderr=(lastStderr+chunk.toString()).slice(-1200)});
- p.on("error",e=>{if(g!==generation)return;lastError="FFmpeg error: "+e.message});
- p.on("close",code=>{if(g!==generation)return;proc=null;procStartedAt=0;if(!enabled)return;lastError="Stream disconnected"+(code!==null?" (FFmpeg exit "+code+")":"")+(lastStderr.trim()?": "+lastStderr.trim().slice(-500):"");schedule(g)});
+ p.stderr.on("data",chunk=>{const line=chunk.toString();lastStderr=(lastStderr+line).slice(-2400);console.error("[ExternalStream][ffmpeg]",line.trim())});
+ p.on("error",e=>{if(g!==generation)return;lastError="FFmpeg process error: "+e.message;console.error("[ExternalStream] FFmpeg process error:",e.stack||e.message)});
+ p.on("close",code=>{if(g!==generation)return;proc=null;procStartedAt=0;if(!enabled)return;lastError="Stream disconnected"+(code!==null?" (FFmpeg exit "+code+")":"")+(lastStderr.trim()?": "+lastStderr.trim().slice(-1000):": FFmpeg closed without reporting an error. Check Render runtime logs and source reachability.");console.error("[ExternalStream] disconnected:",lastError,"URL:",inputUrl);schedule(g)});
 }
 function schedule(g){if(g!==generation||!enabled)return;clearTimeout(restartTimer);reconnects++;const delay=Math.min(30000,2000*Math.pow(2,Math.min(reconnects-1,4)));restartTimer=setTimeout(()=>launch(g),delay)}
-const watchdog=setInterval(()=>{if(!enabled||!proc)return;const reference=lastOutputAt||procStartedAt;if(!lastOutputAt&&reference&&Date.now()-reference>10000&&lastStderr)lastError="Waiting for source audio: "+lastStderr.trim().slice(-500);if(reference&&Date.now()-reference>30000){lastError="No audio received from source for 30 seconds; reconnecting."+(lastStderr.trim()?": "+lastStderr.trim().slice(-300):"");try{proc.kill("SIGTERM")}catch{}}},5000);watchdog.unref?.();
+const watchdog=setInterval(()=>{if(!enabled||!proc)return;const reference=lastOutputAt||procStartedAt;if(!lastOutputAt&&reference&&Date.now()-reference>10000&&lastStderr)lastError="Waiting for source audio: "+lastStderr.trim().slice(-500);if(reference&&Date.now()-reference>30000){lastError="No audio received from source for 30 seconds; reconnecting."+(lastStderr.trim()?": "+lastStderr.trim().slice(-600):"");console.error("[ExternalStream] watchdog:",lastError);try{proc.kill("SIGTERM")}catch{}}},5000);watchdog.unref?.();
 function start(nextUrl){
  if(nextUrl!==undefined){const r=selectUrl(nextUrl);if(!r.success)return r}
  if(!validUrl(url))return {success:false,error:"Choose or save a supported radio stream URL first."};
