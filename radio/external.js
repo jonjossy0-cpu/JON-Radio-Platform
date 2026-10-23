@@ -5,7 +5,7 @@ let FFMPEG_PATH="ffmpeg";try{FFMPEG_PATH=require("ffmpeg-static")||FFMPEG_PATH}c
 const MEDIA_ROOT=process.env.MEDIA_ROOT?path.resolve(process.env.MEDIA_ROOT):path.join(__dirname,"..");
 const STATE_FILE=path.join(MEDIA_ROOT,"external-radio.json");
 const ALLOWED_PROTOCOLS=new Set(["http:","https:","rtmp:","rtmps:","rtsp:","rtsps:","udp:","srt:"]);
-let url="",urls=[],activeUrl=null,enabled=false,proc=null,restartTimer=null,generation=0,lastError=null,startedAt=null,procStartedAt=0,lastOutputAt=null,reconnects=0;
+let url="",urls=[],activeUrl=null,enabled=false,proc=null,restartTimer=null,generation=0,lastError=null,startedAt=null,procStartedAt=0,lastOutputAt=null,reconnects=0,lastStderr="";
 function validUrl(v){try{const u=new URL(String(v||"").trim());return ALLOWED_PROTOCOLS.has(u.protocol)&&Boolean(u.hostname)}catch{return false}}
 function save(){try{fs.mkdirSync(MEDIA_ROOT,{recursive:true});fs.writeFileSync(STATE_FILE,JSON.stringify({url,urls,enabled},null,2));return true}catch(e){lastError="Could not save external stream settings: "+e.message;return false}}
 function restore(){try{if(!fs.existsSync(STATE_FILE))return;const s=JSON.parse(fs.readFileSync(STATE_FILE,"utf8"));if(Array.isArray(s.urls))urls=[...new Set(s.urls.filter(validUrl).map(v=>String(v).trim()))];if(typeof s.url==="string"&&validUrl(s.url))url=s.url;if(url&&!urls.includes(url))urls.unshift(url);if(typeof s.enabled==="boolean")enabled=s.enabled}catch(e){lastError="Could not restore external stream settings: "+e.message}}
@@ -13,19 +13,19 @@ restore();
 function launch(g){
  if(g!==generation||!enabled||!(activeUrl||url))return;
  const inputUrl=activeUrl||url;
- const args=["-hide_banner","-loglevel","warning","-nostdin","-rw_timeout","15000000"];
+ const args=["-hide_banner","-loglevel","warning","-nostdin","-rw_timeout","20000000","-probesize","5000000","-analyzeduration","5000000"];
  if(/^https?:/i.test(inputUrl))args.push("-user_agent","Mozilla/5.0 (compatible; JON-Radio-Platform/2.0)","-headers","Accept: */*\r\nIcy-MetaData: 1\r\n","-reconnect","1","-reconnect_streamed","1","-reconnect_at_eof","1","-reconnect_on_network_error","1","-reconnect_on_http_error","4xx,5xx","-reconnect_delay_max","10");
- args.push("-i",inputUrl,"-vn","-sn","-dn","-ac","2","-ar","44100","-b:a","128k","-c:a","libmp3lame","-f","mp3","pipe:1");
+ args.push("-i",inputUrl,"-map","0:a:0?","-vn","-sn","-dn","-ac","2","-ar","44100","-c:a","libmp3lame","-b:a","128k","-flush_packets","1","-write_xing","0","-f","mp3","pipe:1");
  let p;
  try{p=spawn(FFMPEG_PATH,args,{stdio:["ignore","pipe","pipe"]})}catch(e){lastError="FFmpeg start failed: "+e.message;schedule(g);return}
- proc=p;procStartedAt=Date.now();lastOutputAt=null;let stderr="";
- p.stdout.on("data",chunk=>{if(g!==generation||!enabled)return;lastOutputAt=Date.now();lastError=null;broadcast.broadcast(chunk)});
- p.stderr.on("data",chunk=>{stderr=(stderr+chunk.toString()).slice(-1200)});
+ proc=p;procStartedAt=Date.now();lastOutputAt=null;lastStderr="";
+ p.stdout.on("data",chunk=>{if(g!==generation||!enabled)return;lastOutputAt=Date.now();lastError=null;reconnects=0;broadcast.broadcast(chunk)});
+ p.stderr.on("data",chunk=>{lastStderr=(lastStderr+chunk.toString()).slice(-1200)});
  p.on("error",e=>{if(g!==generation)return;lastError="FFmpeg error: "+e.message});
- p.on("close",code=>{if(g!==generation)return;proc=null;procStartedAt=0;if(!enabled)return;lastError="Stream disconnected"+(code!==null?" (FFmpeg exit "+code+")":"")+(stderr.trim()?": "+stderr.trim().slice(-500):"");schedule(g)});
+ p.on("close",code=>{if(g!==generation)return;proc=null;procStartedAt=0;if(!enabled)return;lastError="Stream disconnected"+(code!==null?" (FFmpeg exit "+code+")":"")+(lastStderr.trim()?": "+lastStderr.trim().slice(-500):"");schedule(g)});
 }
 function schedule(g){if(g!==generation||!enabled)return;clearTimeout(restartTimer);reconnects++;const delay=Math.min(30000,2000*Math.pow(2,Math.min(reconnects-1,4)));restartTimer=setTimeout(()=>launch(g),delay)}
-const watchdog=setInterval(()=>{if(!enabled||!proc)return;const reference=lastOutputAt||procStartedAt;if(reference&&Date.now()-reference>30000){lastError="No audio received from source for 30 seconds; reconnecting.";try{proc.kill("SIGTERM")}catch{}}},5000);watchdog.unref?.();
+const watchdog=setInterval(()=>{if(!enabled||!proc)return;const reference=lastOutputAt||procStartedAt;if(!lastOutputAt&&reference&&Date.now()-reference>10000&&lastStderr)lastError="Waiting for source audio: "+lastStderr.trim().slice(-500);if(reference&&Date.now()-reference>30000){lastError="No audio received from source for 30 seconds; reconnecting."+(lastStderr.trim()?": "+lastStderr.trim().slice(-300):"");try{proc.kill("SIGTERM")}catch{}}},5000);watchdog.unref?.();
 function start(nextUrl){
  if(nextUrl!==undefined){const r=selectUrl(nextUrl);if(!r.success)return r}
  if(!validUrl(url))return {success:false,error:"Choose or save a supported radio stream URL first."};
