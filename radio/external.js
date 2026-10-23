@@ -13,7 +13,7 @@ restore();
 function launch(g){
  if(g!==generation||!enabled||!(activeUrl||url))return;
  const inputUrl=activeUrl||url;
- const args=["-hide_banner","-loglevel","warning","-nostdin","-rw_timeout","20000000","-probesize","5000000","-analyzeduration","5000000"];
+ const args=["-hide_banner","-loglevel","info","-nostdin","-rw_timeout","30000000","-probesize","1000000","-analyzeduration","3000000","-fflags","+nobuffer"];
  if(/^https?:/i.test(inputUrl))args.push("-user_agent","Mozilla/5.0 (compatible; JON-Radio-Platform/2.0)","-headers","Accept: */*\r\nIcy-MetaData: 1\r\n","-reconnect","1","-reconnect_streamed","1","-reconnect_at_eof","1","-reconnect_on_network_error","1","-reconnect_on_http_error","4xx,5xx","-reconnect_delay_max","10");
  args.push("-i",inputUrl,"-map","0:a:0?","-vn","-sn","-dn","-ac","2","-ar","44100","-c:a","libmp3lame","-b:a","128k","-flush_packets","1","-write_xing","0","-f","mp3","pipe:1");
  let p;
@@ -21,11 +21,11 @@ function launch(g){
  proc=p;procStartedAt=Date.now();lastOutputAt=null;lastStderr="";
  p.stdout.on("data",chunk=>{if(g!==generation||!enabled)return;lastOutputAt=Date.now();lastError=null;reconnects=0;broadcast.broadcast(chunk)});
  p.stderr.on("data",chunk=>{const line=chunk.toString();lastStderr=(lastStderr+line).slice(-2400);console.error("[ExternalStream][ffmpeg]",line.trim())});
- p.on("error",e=>{if(g!==generation)return;lastError="FFmpeg process error: "+e.message;console.error("[ExternalStream] FFmpeg process error:",e.stack||e.message)});
- p.on("close",code=>{if(g!==generation)return;proc=null;procStartedAt=0;if(!enabled)return;lastError="Stream disconnected"+(code!==null?" (FFmpeg exit "+code+")":"")+(lastStderr.trim()?": "+lastStderr.trim().slice(-1000):": FFmpeg closed without reporting an error. Check Render runtime logs and source reachability.");console.error("[ExternalStream] disconnected:",lastError,"URL:",inputUrl);schedule(g)});
+ p.on("error",e=>{if(g!==generation)return;lastError="FFmpeg spawn/process error ("+(e.code||e.name)+"): "+e.message;console.error("[ExternalStream] FFmpeg process error:",e.stack||e.message)});
+ p.on("close",(code,signal)=>{if(g!==generation)return;proc=null;procStartedAt=0;if(!enabled)return;const detail=lastStderr.trim()?": "+lastStderr.trim().slice(-1400):": no FFmpeg stderr output";const closeInfo="FFmpeg closed (exit="+String(code)+", signal="+String(signal)+")"+detail;if(!lastError||lastError.startsWith("Waiting for source audio:")||lastError.startsWith("No audio received from source"))lastError="Stream disconnected — "+closeInfo;else lastError=lastError+" | "+closeInfo;console.error("[ExternalStream] disconnected:",lastError,"URL:",inputUrl);schedule(g)});
 }
 function schedule(g){if(g!==generation||!enabled)return;clearTimeout(restartTimer);reconnects++;const delay=Math.min(30000,2000*Math.pow(2,Math.min(reconnects-1,4)));restartTimer=setTimeout(()=>launch(g),delay)}
-const watchdog=setInterval(()=>{if(!enabled||!proc)return;const reference=lastOutputAt||procStartedAt;if(!lastOutputAt&&reference&&Date.now()-reference>10000&&lastStderr)lastError="Waiting for source audio: "+lastStderr.trim().slice(-500);if(reference&&Date.now()-reference>30000){lastError="No audio received from source for 30 seconds; reconnecting."+(lastStderr.trim()?": "+lastStderr.trim().slice(-600):"");console.error("[ExternalStream] watchdog:",lastError);try{proc.kill("SIGTERM")}catch{}}},5000);watchdog.unref?.();
+const watchdog=setInterval(()=>{if(!enabled||!proc)return;const reference=lastOutputAt||procStartedAt;if(!lastOutputAt&&reference&&Date.now()-reference>10000&&lastStderr)lastError="Waiting for source audio: "+lastStderr.trim().slice(-500);if(reference&&Date.now()-reference>45000){lastError="No audio received from source for 45 seconds; reconnecting."+(lastStderr.trim()?": "+lastStderr.trim().slice(-600):"");console.error("[ExternalStream] watchdog:",lastError);try{proc.kill("SIGTERM")}catch{}}},5000);watchdog.unref?.();
 function start(nextUrl){
  if(nextUrl!==undefined){const r=selectUrl(nextUrl);if(!r.success)return r}
  if(!validUrl(url))return {success:false,error:"Choose or save a supported radio stream URL first."};
