@@ -5,7 +5,7 @@ let FFMPEG_PATH="ffmpeg";try{FFMPEG_PATH=require("ffmpeg-static")||FFMPEG_PATH}c
 const MEDIA_ROOT=process.env.MEDIA_ROOT?path.resolve(process.env.MEDIA_ROOT):path.join(__dirname,"..");
 const STATE_FILE=path.join(MEDIA_ROOT,"external-radio.json");
 const ALLOWED_PROTOCOLS=new Set(["http:","https:","rtmp:","rtmps:","rtsp:","rtsps:","udp:","srt:"]);
-let url="",urls=[],activeUrl=null,enabled=false,proc=null,restartTimer=null,generation=0,lastError=null,startedAt=null,lastOutputAt=null,reconnects=0;
+let url="",urls=[],activeUrl=null,enabled=false,proc=null,restartTimer=null,generation=0,lastError=null,startedAt=null,procStartedAt=0,lastOutputAt=null,reconnects=0;
 function validUrl(v){try{const u=new URL(String(v||"").trim());return ALLOWED_PROTOCOLS.has(u.protocol)&&Boolean(u.hostname)}catch{return false}}
 function save(){try{fs.mkdirSync(MEDIA_ROOT,{recursive:true});fs.writeFileSync(STATE_FILE,JSON.stringify({url,urls,enabled},null,2));return true}catch(e){lastError="Could not save external stream settings: "+e.message;return false}}
 function restore(){try{if(!fs.existsSync(STATE_FILE))return;const s=JSON.parse(fs.readFileSync(STATE_FILE,"utf8"));if(Array.isArray(s.urls))urls=[...new Set(s.urls.filter(validUrl).map(v=>String(v).trim()))];if(typeof s.url==="string"&&validUrl(s.url))url=s.url;if(url&&!urls.includes(url))urls.unshift(url);if(typeof s.enabled==="boolean")enabled=s.enabled}catch(e){lastError="Could not restore external stream settings: "+e.message}}
@@ -18,26 +18,26 @@ function launch(g){
  args.push("-i",inputUrl,"-vn","-sn","-dn","-ac","2","-ar","44100","-b:a","128k","-c:a","libmp3lame","-f","mp3","pipe:1");
  let p;
  try{p=spawn(FFMPEG_PATH,args,{stdio:["ignore","pipe","pipe"]})}catch(e){lastError="FFmpeg start failed: "+e.message;schedule(g);return}
- proc=p;let stderr="";
+ proc=p;procStartedAt=Date.now();lastOutputAt=null;let stderr="";
  p.stdout.on("data",chunk=>{if(g!==generation||!enabled)return;lastOutputAt=Date.now();lastError=null;broadcast.broadcast(chunk)});
  p.stderr.on("data",chunk=>{stderr=(stderr+chunk.toString()).slice(-1200)});
  p.on("error",e=>{if(g!==generation)return;lastError="FFmpeg error: "+e.message});
- p.on("close",code=>{if(g!==generation)return;proc=null;if(!enabled)return;lastError="Stream disconnected"+(code!==null?" (FFmpeg exit "+code+")":"")+(stderr.trim()?": "+stderr.trim().slice(-500):"");schedule(g)});
+ p.on("close",code=>{if(g!==generation)return;proc=null;procStartedAt=0;if(!enabled)return;lastError="Stream disconnected"+(code!==null?" (FFmpeg exit "+code+")":"")+(stderr.trim()?": "+stderr.trim().slice(-500):"");schedule(g)});
 }
 function schedule(g){if(g!==generation||!enabled)return;clearTimeout(restartTimer);reconnects++;const delay=Math.min(30000,2000*Math.pow(2,Math.min(reconnects-1,4)));restartTimer=setTimeout(()=>launch(g),delay)}
-const watchdog=setInterval(()=>{if(!enabled||!proc)return;const reference=lastOutputAt||Date.parse(startedAt||"");if(reference&&Date.now()-reference>30000){lastError="No audio received from source for 30 seconds; reconnecting.";try{proc.kill("SIGTERM")}catch{}}},5000);watchdog.unref?.();
+const watchdog=setInterval(()=>{if(!enabled||!proc)return;const reference=lastOutputAt||procStartedAt;if(reference&&Date.now()-reference>30000){lastError="No audio received from source for 30 seconds; reconnecting.";try{proc.kill("SIGTERM")}catch{}}},5000);watchdog.unref?.();
 function start(nextUrl){
  if(nextUrl!==undefined){const r=selectUrl(nextUrl);if(!r.success)return r}
  if(!validUrl(url))return {success:false,error:"Choose or save a supported radio stream URL first."};
  if(enabled&&broadcast.status().source==="external"&&proc&&activeUrl===url)return {success:true,status:status()};
  if(broadcast.status().source!=="idle"&&broadcast.status().source!=="external")return {success:false,error:"Another source is running. Stop Auto DJ or Live before starting the external stream."};
  if(proc){const old=proc;proc=null;try{old.kill("SIGTERM")}catch{}}clearTimeout(restartTimer);restartTimer=null;
- enabled=true;activeUrl=url;lastError=null;startedAt=new Date().toISOString();lastOutputAt=null;reconnects=0;
+ enabled=true;activeUrl=url;lastError=null;startedAt=new Date().toISOString();procStartedAt=0;lastOutputAt=null;reconnects=0;
  if(!save()){enabled=false;activeUrl=null;return {success:false,error:lastError}}
  if(!broadcast.start("external")){enabled=false;save();return {success:false,error:"The public radio stream is busy. Stop the active source first."}}
  const g=++generation;launch(g);return {success:true,status:status()}
 }
-function stop(){enabled=false;activeUrl=null;generation++;clearTimeout(restartTimer);restartTimer=null;const p=proc;proc=null;if(p){try{p.kill("SIGTERM")}catch{}setTimeout(()=>{try{if(p.exitCode===null)p.kill("SIGKILL")}catch{}},1500).unref?.()}broadcast.stop("external");save();return true}
+function stop(){enabled=false;activeUrl=null;generation++;clearTimeout(restartTimer);restartTimer=null;const p=proc;proc=null;procStartedAt=0;lastOutputAt=null;if(p){try{p.kill("SIGTERM")}catch{}setTimeout(()=>{try{if(p.exitCode===null)p.kill("SIGKILL")}catch{}},1500).unref?.()}broadcast.stop("external");save();return true}
 function setUrls(values){if(!Array.isArray(values)||!values.length)return {success:false,error:"Paste at least one radio link, one URL per line."};const clean=[...new Set(values.map(v=>String(v||"").trim()).filter(Boolean))];if(!clean.length||clean.some(v=>!validUrl(v)))return {success:false,error:"One or more links are invalid. Supported schemes: HTTP(S), RTMP(S), RTSP(S), UDP and SRT."};const old={url,urls:urls.slice()};urls=clean;if(!urls.includes(url))url=urls[0];if(!save()){url=old.url;urls=old.urls;return {success:false,error:lastError}}return {success:true,settings:status()}}
 function setUrl(nextUrl){const value=String(nextUrl||"").trim();if(!validUrl(value))return {success:false,error:"Enter a valid radio stream URL (HTTP(S), RTMP(S), RTSP(S), UDP or SRT)."};const next=[...urls];if(!next.includes(value))next.push(value);return setUrls(next)}
 function selectUrl(nextUrl){const value=String(nextUrl||"").trim();if(!urls.includes(value)){if(validUrl(value))return setUrl(value);return {success:false,error:"Choose a saved radio link first."}}const previous=url;url=value;if(!save()){url=previous;return {success:false,error:lastError}}return {success:true,settings:status()}}
