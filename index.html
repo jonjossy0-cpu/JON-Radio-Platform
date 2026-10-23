@@ -41,6 +41,62 @@ async function saveExternalStream(){const url=$("externalUrl").value.trim();try{
 $("saveExternal").onclick=saveExternalStream;
 $("startExternal").onclick=async()=>{const url=$("externalUrl").value.trim();try{await api("/api/external-stream/start",{method:"POST",body:JSON.stringify({url})});$("externalStatus").textContent="🟢 External stream started. Automatic reconnect is enabled.";toast("External 24/7 stream started");refresh()}catch(e){toast(e.message);$("externalStatus").textContent=e.message}};
 $("stopExternal").onclick=async()=>{try{await api("/api/external-stream/stop",{method:"POST"});$("externalStatus").textContent="External stream OFF";toast("External stream stopped");refresh()}catch(e){toast(e.message)}};
-async function openLiveMic(){if(socket)return;try{if(!navigator.mediaDevices?.getUserMedia)throw Error("This browser does not support microphone capture");if(!window.AudioContext&& !window.webkitAudioContext)throw Error("Advanced audio capture is not supported");try{mic=await navigator.mediaDevices.getUserMedia({audio:{channelCount:{ideal:2,min:1},sampleRate:{ideal:48000},sampleSize:{ideal:24},echoCancellation:false,noiseSuppression:false,autoGainControl:false}})}catch(firstMicError){const micErrorName=firstMicError?.name||"";const micErrorMessage=String(firstMicError?.message||firstMicError||"");if(!["NotFoundError","OverconstrainedError","ConstraintNotSatisfiedError"].includes(micErrorName)&&!/request not found|device not found|constraint/i.test(micErrorMessage))throw firstMicError;mic=await navigator.mediaDevices.getUserMedia({audio:true})}audioCtx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"interactive",sampleRate:48000});if(audioCtx.state==="suspended")await audioCtx.resume();const actual=mic.getAudioTracks()[0]?.getSettings?.()||{};const source=audioCtx.createMediaStreamSource(mic);analyser=audioCtx.createAnalyser();analyser.fftSize=1024;source.connect(analyser);const workletCode=`class JONPCM extends AudioWorkletProcessor{constructor(){super();this.size=960;this.left=new Float32Array(this.size);this.right=new Float32Array(this.size);this.used=0}process(inputs){const input=inputs[0],left=input[0],right=input[1]||input[0];if(left&&left.length){for(let i=0;i<left.length;i++){this.left[this.used]=left[i];this.right[this.used]=right[i];this.used++;if(this.used===this.size){const pcm=new Int16Array(this.size*2);for(let j=0;j<this.size;j++){const l=Math.max(-1,Math.min(1,this.left[j])),r=Math.max(-1,Math.min(1,this.right[j]));pcm[j*2]=l<0?l*32768:l*32767;pcm[j*2+1]=r<0?r*32768:r*32767}this.port.postMessage(pcm.buffer,[pcm.buffer]);this.used=0}}}return true}}registerProcessor("jon-pcm",JONPCM);`;const blob=new Blob([workletCode],{type:"application/javascript"});const moduleUrl=URL.createObjectURL(blob);await audioCtx.audioWorklet.addModule(moduleUrl);URL.revokeObjectURL(moduleUrl);const node=new AudioWorkletNode(audioCtx,"jon-pcm",{numberOfInputs:1,numberOfOutputs:1,channelCount:2,channelCountMode:"explicit",channelInterpretation:"speakers"});const silent=audioCtx.createGain();silent.gain.value=0;node.connect(silent);silent.connect(audioCtx.destination);source.connect(node);const streamInfo=document.querySelector("#liveText");socket=new WebSocket(API.replace(/^http/,"ws")+"/live-mic");socket.binaryType="arraybuffer";socket.onopen=()=>{node.port.onmessage=e=>{if(socket?.readyState===1&&socket.bufferedAmount<1048576)socket.send(e.data)};streamInfo.textContent="🔴 MICROPHONE ON — PROFESSIONAL PCM STEREO 48kHz / 256kbps";startMeter()};socket.onerror=()=>toast("Live connection failed");socket.onclose=cleanup;window.__jonMicNode=node;window.__jonMicSettings=actual}catch(e){toast("Microphone error: "+e.message);cleanup()}}
+async function openLiveMic(){
+ if(socket)return;
+ let audioNode=null,streamInfo=$("liveText");
+ try{
+  if(!window.isSecureContext&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1")throw Error("Microphone needs HTTPS. Open the secure JON dashboard link.");
+  if(!navigator.mediaDevices?.getUserMedia)throw Error("This browser cannot access the microphone. Open the page in Chrome and allow Microphone permission.");
+  const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+  if(!AudioContextClass)throw Error("This browser does not support live audio. Update Chrome and try again.");
+  const attempts=[
+   {audio:{channelCount:{ideal:2},sampleRate:{ideal:48000},sampleSize:{ideal:24},echoCancellation:false,noiseSuppression:false,autoGainControl:false}},
+   {audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}},
+   {audio:true}
+  ];
+  let lastMicError=null;
+  for(const constraints of attempts){
+   try{mic=await navigator.mediaDevices.getUserMedia(constraints);break}
+   catch(e){lastMicError=e;if(e?.name==="NotAllowedError"||e?.name==="SecurityError")throw Error("Microphone permission is blocked. In Chrome site settings, allow Microphone, then reload.");}
+  }
+  if(!mic)throw Error(lastMicError?.message||"No microphone was found. Connect/enable a microphone and allow browser permission.");
+  audioCtx=new AudioContextClass({latencyHint:"interactive",sampleRate:48000});
+  if(audioCtx.state==="suspended")await audioCtx.resume();
+  const actual=mic.getAudioTracks()[0]?.getSettings?.()||{};
+  const source=audioCtx.createMediaStreamSource(mic);
+  analyser=audioCtx.createAnalyser();analyser.fftSize=1024;source.connect(analyser);
+  const sendPCM=buffer=>{
+   if(!socket||socket.readyState!==1||socket.bufferedAmount>1048576)return;
+   try{socket.send(buffer)}catch{}
+  };
+  if(audioCtx.audioWorklet&&typeof AudioWorkletNode!=="undefined"){
+   const workletCode=`class JONPCM extends AudioWorkletProcessor{constructor(){super();this.size=960;this.left=new Float32Array(this.size);this.right=new Float32Array(this.size);this.used=0}process(inputs){const input=inputs[0],left=input[0],right=input[1]||input[0];if(left&&left.length){for(let i=0;i<left.length;i++){this.left[this.used]=left[i];this.right[this.used]=right[i];this.used++;if(this.used===this.size){const pcm=new Int16Array(this.size*2);for(let j=0;j<this.size;j++){const l=Math.max(-1,Math.min(1,this.left[j])),r=Math.max(-1,Math.min(1,this.right[j]));pcm[j*2]=l<0?l*32768:l*32767;pcm[j*2+1]=r<0?r*32768:r*32767}this.port.postMessage(pcm.buffer,[pcm.buffer]);this.used=0}}}return true}}registerProcessor("jon-pcm",JONPCM);`;
+   const blob=new Blob([workletCode],{type:"application/javascript"}),moduleUrl=URL.createObjectURL(blob);
+   try{await audioCtx.audioWorklet.addModule(moduleUrl)}finally{URL.revokeObjectURL(moduleUrl)}
+   audioNode=new AudioWorkletNode(audioCtx,"jon-pcm",{numberOfInputs:1,numberOfOutputs:1,channelCount:2,channelCountMode:"explicit",channelInterpretation:"speakers"});
+   audioNode.port.onmessage=e=>sendPCM(e.data);
+   const silent=audioCtx.createGain();silent.gain.value=0;audioNode.connect(silent);silent.connect(audioCtx.destination);source.connect(audioNode);
+  }else{
+   const processor=audioCtx.createScriptProcessor(2048,2,2),silent=audioCtx.createGain();silent.gain.value=0;
+   processor.onaudioprocess=e=>{
+    const input=e.inputBuffer,left=input.getChannelData(0),right=input.numberOfChannels>1?input.getChannelData(1):left,pcm=new Int16Array(left.length*2);
+    for(let i=0;i<left.length;i++){const l=Math.max(-1,Math.min(1,left[i])),r=Math.max(-1,Math.min(1,right[i]));pcm[i*2]=l<0?l*32768:l*32767;pcm[i*2+1]=r<0?r*32768:r*32767}
+    sendPCM(pcm.buffer);
+   };
+   source.connect(processor);processor.connect(silent);silent.connect(audioCtx.destination);audioNode=processor;
+  }
+  socket=new WebSocket(API.replace(/^http/,"ws")+"/live-mic");socket.binaryType="arraybuffer";
+  socket.onopen=()=>{streamInfo.textContent="🔴 MICROPHONE ON — STEREO PCM / 48 kHz";startMeter()};
+  socket.onerror=()=>toast("Live connection failed. Check the server and internet connection.");
+  socket.onclose=()=>cleanup();
+  window.__jonMicNode=audioNode;window.__jonMicSettings=actual;
+ }catch(e){
+  const message=String(e?.message||e||"Unknown microphone error");
+  toast("Microphone error: "+message);
+  streamInfo.textContent="Microphone OFF — "+message;
+  try{socket?.close()}catch{}
+  cleanup();
+ }
+}
 $("live").onclick=openLiveMic;$("liveStop").onclick=()=>{try{rec?.stop()}catch{}try{socket?.close()}catch{}cleanup();refresh()};function cleanup(){$("liveText").textContent="Microphone is OFF";if(meterRAF)cancelAnimationFrame(meterRAF);$("meter").style.width="0";if(audioCtx){try{audioCtx.close()}catch{}audioCtx=null}if(mic){mic.getTracks().forEach(t=>t.stop());mic=null}socket=null;rec=null;analyser=null}function startMeter(){if(!analyser)return;const data=new Uint8Array(analyser.frequencyBinCount);const draw=()=>{if(!analyser)return;analyser.getByteTimeDomainData(data);let sum=0;for(const v of data){const n=(v-128)/128;sum+=n*n}$("meter").style.width=Math.min(100,Math.sqrt(sum/data.length)*180)+"%";meterRAF=requestAnimationFrame(draw)};draw()}
 $("lock").onclick=lockDashboard;$("logout").onclick=logout;$("monitor").src=API+"/jonfm";setInterval(refresh,3000);setInterval(loadPromotionTimer,3000);$("login").style.display="flex";</script></body></html>
