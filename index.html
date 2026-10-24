@@ -60,13 +60,12 @@ async function openLiveMic(){
   try{mic=await navigator.mediaDevices.getUserMedia({audio:constraints})}catch(e){if(e?.name==="NotAllowedError"||e?.name==="SecurityError")throw Error("Microphone permission is blocked. Allow microphone access in Android and Chrome site settings.");if(e?.name==="NotReadableError"||e?.name==="TrackStartError")throw Error("Microphone is busy. Close calls or recording apps and try again.");if(selected)throw Error("Could not open the selected microphone. Refresh the input list and choose another device.");mic=await navigator.mediaDevices.getUserMedia({audio:true})}
   await loadMicDevices();audioCtx=new(window.AudioContext||window.webkitAudioContext)({sampleRate:48000,latencyHint:"interactive"});if(audioCtx.state==="suspended")await audioCtx.resume();
   await audioCtx.audioWorklet.addModule(API+"/live-processor.js");
-  const source=audioCtx.createMediaStreamSource(mic),highPass=audioCtx.createBiquadFilter(),lowPass=audioCtx.createBiquadFilter(),compressor=audioCtx.createDynamicsCompressor();
-  highPass.type="highpass";highPass.frequency.value=75;highPass.Q.value=.707;lowPass.type="lowpass";lowPass.frequency.value=18000;lowPass.Q.value=.707;
-  compressor.threshold.value=-20;compressor.knee.value=12;compressor.ratio.value=1.7;compressor.attack.value=.012;compressor.release.value=.22;
+  const source=audioCtx.createMediaStreamSource(mic),highPass=audioCtx.createBiquadFilter(),lowPass=audioCtx.createBiquadFilter();
+  highPass.type="highpass";highPass.frequency.value=35;highPass.Q.value=.707;lowPass.type="lowpass";lowPass.frequency.value=19500;lowPass.Q.value=.707;
   analyser=audioCtx.createAnalyser();analyser.fftSize=512;
   micProcessor=new AudioWorkletNode(audioCtx,"jon-pcm-capture",{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2],channelCount:2,channelCountMode:"explicit"});
   silenceGain=audioCtx.createGain();silenceGain.gain.value=0;
-  source.connect(highPass);highPass.connect(lowPass);lowPass.connect(compressor);compressor.connect(analyser);compressor.connect(micProcessor);micProcessor.connect(silenceGain);silenceGain.connect(audioCtx.destination);
+  source.connect(highPass);highPass.connect(lowPass);lowPass.connect(analyser);lowPass.connect(micProcessor);micProcessor.connect(silenceGain);silenceGain.connect(audioCtx.destination);
   socket=new WebSocket(API.replace(/^http/,"ws")+"/live-mic");socket.binaryType="arraybuffer";
   micProcessor.port.onmessage=e=>{if(!socket||socket.readyState!==1)return;if(socket.bufferedAmount>524288){$("micLevel").textContent="Network busy";return}try{socket.send(e.data)}catch{}};
   socket.onopen=()=>{try{socket.send(JSON.stringify({type:"pcm",format:"s16le",sampleRate:audioCtx.sampleRate,channels:2}));streamInfo.textContent="Connecting to radio encoder…";setLiveState(false,"CONNECTING")}catch(e){toast("Could not start live audio: "+e.message);try{socket?.close()}catch{}}};
