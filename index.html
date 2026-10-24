@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>JON FM ETHIOPIA — Radio Platform 2.0</title>
-<!-- Live microphone transport: Opus audio over WebSocket, server-side MP3 256 kbps -->
+<!-- Live microphone transport: 48 kHz / 16-bit PCM stereo over WebSocket, server-side MP3 320 kbps -->
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f3f6fa;color:#172033}
 header{background:#0b5ed7;color:#fff;padding:16px 20px;position:sticky;top:0;z-index:5;box-shadow:0 2px 10px #0002}
@@ -31,7 +31,7 @@ button:disabled{opacity:.45;cursor:not-allowed}input,select{padding:8px;border:1
 <section class="card"><h2>🤖 24/7 Auto DJ</h2><div class="row"><button id="start">▶ Start</button><button id="stop" class="stop">■ Stop</button><button id="pause" class="alt">Ⅱ Pause</button><button id="resume" class="good">▶ Resume</button></div><div class="row" style="margin-top:6px"><button id="prev" class="alt">⏮ Previous</button><button id="nextBtn" class="alt">⏭ Next</button></div><div class="row" style="margin-top:6px"><button id="shuffle" class="alt">Shuffle: OFF</button><button id="repeat" class="alt">Repeat: OFF</button></div><label>Crossfade (sec) <input id="fade" type="number" min="0" max="15" step=".5" value="0"></label><label>Gain (dB) <input id="gain" type="number" min="-12" max="12" step=".5" value="0"></label><button id="save" style="margin-top:8px">💾 Save DJ Settings</button></section>
 <section class="card"><h2>📋 Playlist & Queue</h2><div class="row"><button id="savePlaylist">Save Playlist</button><button id="clearQueue" class="alt">Clear Queue</button><button id="clearPlaylist" class="stop">Clear Playlist</button></div><div id="playlist" class="list" style="margin-top:10px"></div><h3 style="font-size:14px">Queue</h3><div id="queue" class="list"></div></section>
 <section class="card wide"><h2>📻 External Radio Stream — 24/7</h2><p class="small muted">Save multiple radio links at once, one per line, then select which link to play. Supports HTTP(S), RTMP(S), RTSP(S), UDP and SRT where supported by the server FFmpeg build.</p><label for="externalUrls">Radio Stream Links — one URL per line</label><textarea id="externalUrls" placeholder="https://radio.example/live.mp3&#10;https://radio.example/live/index.m3u8" style="width:100%;min-height:110px;padding:10px;border:1px solid #ccd5e1;border-radius:8px;margin:6px 0 10px;font:inherit"></textarea><div class="row"><button id="saveExternal" class="alt">💾 Save All Links</button><button id="copyAllExternal" class="alt">📋 Copy All Links</button></div><label for="externalSavedLinks" style="display:block;margin-top:12px">Choose Saved Radio Link</label><select id="externalSavedLinks" style="width:100%;margin:6px 0 10px"><option value="">No saved links yet</option></select><div class="row"><button id="copySelectedExternal" class="alt">📋 Copy Selected Link</button><button id="startExternal" class="good">▶ Start Selected Stream</button><button id="stopExternal" class="stop">■ Stop Stream</button></div><p id="externalStatus" class="small muted">External stream: checking status…</p><div style="margin-top:10px;padding:12px;border:1px solid #dbe3ed;border-radius:10px"><strong>Direct Stream Player (browser fallback)</strong><p class="small muted">Plays the selected HTTP(S) radio source directly if the server transcoder cannot connect.</p><audio id="externalPlayer" controls playsinline preload="none" style="width:100%;max-width:100%"></audio></div><p class="small muted">Saved links are stored on the server. Persistence after redeploy depends on hosting storage. Source uptime depends on the stream provider and hosting plan.</p></section>
-<section class="card"><h2>🎙️ Live Microphone</h2><p id="liveText" class="muted">Microphone is OFF</p><div class="row"><button id="live" class="live">🔴 Start Live</button><button id="liveStop" class="stop">Stop Live</button></div><div class="meter"><i id="meter"></i></div><p class="small muted">Noise-filtered Opus voice audio • 128 kbps transport • 256 kbps MP3 broadcast output • Live takes priority over Auto DJ.</p></section>
+<section class="card"><h2>🎙️ Live Microphone</h2><p id="liveText" class="muted">Microphone is OFF</p><div class="row"><button id="live" class="live">🔴 Start Live</button><button id="liveStop" class="stop">Stop Live</button></div><div class="meter"><i id="meter"></i></div><p class="small muted">48 kHz / 16-bit PCM stereo input • 320 kbps MP3 broadcast output • Live takes priority over Auto DJ.</p></section>
 <section class="card"><h2>📢 Promotion / Ads</h2><div class="drop"><input id="ads" type="file" accept=".mp3,.wav,.m4a,audio/*" multiple></div><div class="small muted">Ads can be played manually or by the automatic interval timer.</div><div class="row"><button id="uploadAds" class="good">⬆ Upload Ads</button><button id="promotion" class="alt">▶ Play Promotion Now</button></div><label style="display:block;margin-top:10px">Automatic promotion interval (minutes)<input id="adInterval" type="number" min="0" max="240" step="1" value="0"></label><p class="small muted">0 = automatic promotion timer OFF.</p></section>
 <section class="card"><h2>🎵 Jingles</h2><div class="drop"><input id="jingleFile" type="file" accept=".mp3,.wav,.m4a,audio/*"><div class="small">Upload station jingles</div></div><div class="row"><button id="uploadJingle" class="good">⬆ Upload Jingle</button><button id="playJingle" class="alt">▶ Play Jingle Now</button></div><label style="display:block;margin-top:10px">Automatic Jingle interval (minutes) <input id="jingleInterval" type="number" min="0" max="240" step="1" value="0"></label><button id="saveJingleTimer" style="margin-top:8px">💾 Save Jingle Timer</button><p id="jingleStatus" class="small muted"></p><p id="jingleTimerStatus" class="small muted">Jingle timer: OFF</p></section>
 <section class="card"><h2>🎚️ Station Controls</h2><div class="row"><span class="pill">Public stream</span><audio id="monitor" controls preload="none" style="max-width:100%"></audio></div><p class="small muted">Stream: <code>/jonfm</code> • Dashboard refreshes automatically.</p></section>
@@ -54,8 +54,8 @@ async function openLiveMic(){
   if(!window.isSecureContext&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1")throw Error("Microphone needs HTTPS.");
   if(!navigator.mediaDevices?.getUserMedia)throw Error("Open this page in Chrome and allow microphone permission.");
   const attempts=[
-   {audio:{channelCount:{ideal:2},sampleRate:{ideal:48000},echoCancellation:true,noiseSuppression:false,autoGainControl:false}},
-   {audio:{echoCancellation:true,noiseSuppression:false,autoGainControl:false}},
+   {audio:{channelCount:{ideal:2},sampleRate:{ideal:48000},echoCancellation:false,noiseSuppression:false,autoGainControl:false}},
+   {audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}},
    {audio:true}
   ];
   let lastError=null;
@@ -69,35 +69,36 @@ async function openLiveMic(){
    if(lastError?.name==="NotFoundError"||lastError?.name==="DevicesNotFoundError"||/device not found|request not found/i.test(msg))throw Error("Android/browser cannot open a microphone input. Check Android microphone access and Chrome site permission; close calls/recording apps, then reload.");
    throw Error("Could not open microphone ("+(lastError?.name||"browser error")+"): "+msg);
   }
-  const mimeType=window.MediaRecorder&&MediaRecorder.isTypeSupported("audio/webm;codecs=opus")?"audio/webm;codecs=opus":"";
-  if(!mimeType)throw Error("This browser does not support the Opus microphone stream. Please use current Chrome.");
   audioCtx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000,latencyHint:"interactive"});
   if(audioCtx.state==="suspended")await audioCtx.resume();
   const source=audioCtx.createMediaStreamSource(mic);
-  const highPass=audioCtx.createBiquadFilter();highPass.type="highpass";highPass.frequency.value=85;highPass.Q.value=0.707;
-  const lowPass=audioCtx.createBiquadFilter();lowPass.type="lowpass";lowPass.frequency.value=15000;lowPass.Q.value=0.707;
-  const compressor=audioCtx.createDynamicsCompressor();compressor.threshold.value=-20;compressor.knee.value=12;compressor.ratio.value=1.6;compressor.attack.value=0.015;compressor.release.value=0.22;
+  const highPass=audioCtx.createBiquadFilter();highPass.type="highpass";highPass.frequency.value=70;highPass.Q.value=0.707;
+  const lowPass=audioCtx.createBiquadFilter();lowPass.type="lowpass";lowPass.frequency.value=20000;lowPass.Q.value=0.707;
+  const compressor=audioCtx.createDynamicsCompressor();compressor.threshold.value=-18;compressor.knee.value=10;compressor.ratio.value=1.8;compressor.attack.value=0.008;compressor.release.value=0.18;
   source.connect(highPass);highPass.connect(lowPass);lowPass.connect(compressor);
   analyser=audioCtx.createAnalyser();analyser.fftSize=512;compressor.connect(analyser);
-  recordDestination=audioCtx.createMediaStreamDestination();compressor.connect(recordDestination);
-  rec=new MediaRecorder(recordDestination.stream,{mimeType,audioBitsPerSecond:128000});
-  let audioSendQueue=Promise.resolve();
-  rec.ondataavailable=e=>{
-   if(!e.data||!e.data.size||!socket||socket.readyState!==1)return;
-   audioSendQueue=audioSendQueue.then(()=>e.data.arrayBuffer()).then(buf=>{
-    if(!socket||socket.readyState!==1)return;
-    if(socket.bufferedAmount>2097152){streamInfo.textContent="⚠️ MIC LIVE • Network is slow; audio may briefly drop.";return}
-    socket.send(buf);
-   }).catch(()=>{});
+  micProcessor=audioCtx.createScriptProcessor(4096,2,2);
+  micProcessor.channelCount=2;micProcessor.channelCountMode="explicit";micProcessor.channelInterpretation="speakers";
+  silenceGain=audioCtx.createGain();silenceGain.gain.value=0;
+  compressor.connect(micProcessor);micProcessor.connect(silenceGain);silenceGain.connect(audioCtx.destination);
+  micProcessor.onaudioprocess=e=>{
+   if(!socket||socket.readyState!==1)return;
+   if(socket.bufferedAmount>524288){streamInfo.textContent="⚠️ MIC LIVE • Network is slow; audio may briefly drop.";return}
+   const input=e.inputBuffer,left=input.getChannelData(0),right=input.numberOfChannels>1?input.getChannelData(1):left;
+   const pcm=new ArrayBuffer(left.length*4),view=new DataView(pcm);
+   for(let i=0,offset=0;i<left.length;i++,offset+=4){
+    const l=Math.max(-1,Math.min(1,left[i])),r=Math.max(-1,Math.min(1,right[i]));
+    view.setInt16(offset,l<0?l*32768:l*32767,true);
+    view.setInt16(offset+2,r<0?r*32768:r*32767,true);
+   }
+   try{socket.send(pcm)}catch{}
   };
-  rec.onerror=()=>{streamInfo.textContent="Microphone recording error. Stop and start Live again.";toast("Microphone recording error")};
   socket=new WebSocket(API.replace(/^http/,"ws")+"/live-mic");socket.binaryType="arraybuffer";
   socket.onopen=()=>{
    try{
-    socket.send(JSON.stringify({type:"opus",format:"webm-opus",sampleRate:audioCtx.sampleRate,channels:2}));
-    rec.start(250);
-   }catch(e){toast("Could not start Opus microphone stream: "+e.message);try{socket?.close()}catch{}return}
-   streamInfo.textContent="🔴 MIC LIVE • OPUS AUDIO • 128 kbps • noise filtering enabled";
+    socket.send(JSON.stringify({type:"pcm",format:"s16le",sampleRate:audioCtx.sampleRate,channels:2}));
+   }catch(e){toast("Could not start PCM microphone stream: "+e.message);try{socket?.close()}catch{}return}
+   streamInfo.textContent="🔴 MIC LIVE • 48 kHz / 16-bit PCM stereo • 320 kbps MP3 output";
    startMeter();
   };
   socket.onerror=()=>toast("Live connection failed. Check the server and internet connection.");
@@ -113,9 +114,10 @@ async function openLiveMic(){
 $("live").onclick=openLiveMic;$("liveStop").onclick=()=>{try{socket?.close()}catch{}cleanup();refresh()};function cleanup(){
  $("liveText").textContent="Microphone is OFF";
  if(meterRAF)cancelAnimationFrame(meterRAF);
- $("meter").style.width="0";
+ meterRAF=null;$("meter").style.width="0";
  if(rec){const recorder=rec;rec=null;recorder.ondataavailable=null;recorder.onerror=null;try{if(recorder.state!=="inactive")recorder.stop()}catch{}}
- if(audioCtx&&recordDestination){try{recordDestination.stream.getTracks().forEach(t=>t.stop())}catch{}}
+ if(micProcessor){try{micProcessor.onaudioprocess=null;micProcessor.disconnect()}catch{}micProcessor=null}
+ if(silenceGain){try{silenceGain.disconnect()}catch{}silenceGain=null}
  if(audioCtx){try{audioCtx.close()}catch{}audioCtx=null}
  recordDestination=null;
  if(mic){mic.getTracks().forEach(t=>t.stop());mic=null}
