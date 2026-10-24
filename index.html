@@ -53,7 +53,7 @@ async function openLiveMic(){
  try{
   if(!window.isSecureContext&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1")throw Error("Microphone needs HTTPS.");
   if(!navigator.mediaDevices?.getUserMedia)throw Error("Open this page in Chrome and allow microphone permission.");
-  const attempts=[{audio:{channelCount:{ideal:2},sampleRate:{ideal:48000},echoCancellation:false,noiseSuppression:false,autoGainControl:false}},{audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}},{audio:{noiseSuppression:false,echoCancellation:false,autoGainControl:false}},{audio:true}];
+  const attempts=[{audio:{channelCount:{ideal:2},sampleRate:{ideal:48000},echoCancellation:true,noiseSuppression:true,autoGainControl:false}},{audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:false}},{audio:true}];
   let lastError=null;
   for(const constraints of attempts){
    try{mic=await navigator.mediaDevices.getUserMedia(constraints);break}
@@ -75,15 +75,16 @@ async function openLiveMic(){
   audioCtx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000,latencyHint:"interactive"});
   if(audioCtx.state==="suspended")await audioCtx.resume();
   const source=audioCtx.createMediaStreamSource(mic);
-  // Keep browser DSP from suppressing quiet speech; only remove low rumble and mains/handling noise.
-  const micHighPass=audioCtx.createBiquadFilter();micHighPass.type="highpass";micHighPass.frequency.value=70;micHighPass.Q.value=0.707;
-  const micLowPass=audioCtx.createBiquadFilter();micLowPass.type="lowpass";micLowPass.frequency.value=18000;micLowPass.Q.value=0.707;
-  source.connect(micHighPass);micHighPass.connect(micLowPass);
-  analyser=audioCtx.createAnalyser();analyser.fftSize=512;micLowPass.connect(analyser);
-  // Send cleaned stereo PCM to the server; encode to MP3 only once on the server.
+  // Reduce low-frequency electrical/handling rumble and high-frequency hiss before transmission.
+  const micHighPass=audioCtx.createBiquadFilter();micHighPass.type="highpass";micHighPass.frequency.value=95;micHighPass.Q.value=0.707;
+  const micLowPass=audioCtx.createBiquadFilter();micLowPass.type="lowpass";micLowPass.frequency.value=14500;micLowPass.Q.value=0.707;
+  const micCompressor=audioCtx.createDynamicsCompressor();micCompressor.threshold.value=-24;micCompressor.knee.value=18;micCompressor.ratio.value=2.5;micCompressor.attack.value=0.012;micCompressor.release.value=0.18;
+  source.connect(micHighPass);micHighPass.connect(micLowPass);micLowPass.connect(micCompressor);
+  analyser=audioCtx.createAnalyser();analyser.fftSize=512;micCompressor.connect(analyser);
+  // Send cleaned, gently level-controlled PCM to the server; encode to MP3 only once on the server.
   micProcessor=audioCtx.createScriptProcessor(4096,Math.max(1,mic.getAudioTracks()[0]?.getSettings?.().channelCount||1),2);
   silenceGain=audioCtx.createGain();silenceGain.gain.value=0;
-  micLowPass.connect(micProcessor);micProcessor.connect(silenceGain);silenceGain.connect(audioCtx.destination);
+  micCompressor.connect(micProcessor);micProcessor.connect(silenceGain);silenceGain.connect(audioCtx.destination);
   socket=new WebSocket(API.replace(/^http/,"ws")+"/live-mic");socket.binaryType="arraybuffer";
   socket.onopen=()=>{
    try{socket.send(JSON.stringify({type:"pcm",sampleRate:audioCtx.sampleRate,channels:2,format:"s16le"}))}
