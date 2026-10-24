@@ -54,8 +54,8 @@ async function openLiveMic(){
   if(!window.isSecureContext&&location.hostname!=="localhost"&&location.hostname!=="127.0.0.1")throw Error("Microphone needs HTTPS.");
   if(!navigator.mediaDevices?.getUserMedia)throw Error("Open this page in Chrome and allow microphone permission.");
   const attempts=[
-   {audio:{channelCount:{ideal:2},sampleRate:{ideal:48000},echoCancellation:true,noiseSuppression:true,autoGainControl:false}},
-   {audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:false}},
+   {audio:{channelCount:{ideal:2},sampleRate:{ideal:48000},echoCancellation:true,noiseSuppression:false,autoGainControl:false}},
+   {audio:{echoCancellation:true,noiseSuppression:false,autoGainControl:false}},
    {audio:true}
   ];
   let lastError=null;
@@ -81,11 +81,14 @@ async function openLiveMic(){
   analyser=audioCtx.createAnalyser();analyser.fftSize=512;compressor.connect(analyser);
   recordDestination=audioCtx.createMediaStreamDestination();compressor.connect(recordDestination);
   rec=new MediaRecorder(recordDestination.stream,{mimeType,audioBitsPerSecond:128000});
+  let audioSendQueue=Promise.resolve();
   rec.ondataavailable=e=>{
-   if(!e.data||!e.data.size)return;
-   if(!socket||socket.readyState!==1)return;
-   if(socket.bufferedAmount>2097152){streamInfo.textContent="⚠️ MIC LIVE • Network is slow; audio may briefly drop.";return}
-   e.data.arrayBuffer().then(buf=>{if(socket&&socket.readyState===1)socket.send(buf)}).catch(()=>{});
+   if(!e.data||!e.data.size||!socket||socket.readyState!==1)return;
+   audioSendQueue=audioSendQueue.then(()=>e.data.arrayBuffer()).then(buf=>{
+    if(!socket||socket.readyState!==1)return;
+    if(socket.bufferedAmount>2097152){streamInfo.textContent="⚠️ MIC LIVE • Network is slow; audio may briefly drop.";return}
+    socket.send(buf);
+   }).catch(()=>{});
   };
   rec.onerror=()=>{streamInfo.textContent="Microphone recording error. Stop and start Live again.";toast("Microphone recording error")};
   socket=new WebSocket(API.replace(/^http/,"ws")+"/live-mic");socket.binaryType="arraybuffer";
