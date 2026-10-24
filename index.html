@@ -97,11 +97,22 @@ async function openLiveMic(){
   socket.onopen=()=>{
    try{
     socket.send(JSON.stringify({type:"pcm",format:"s16le",sampleRate:audioCtx.sampleRate,channels:2}));
+    streamInfo.textContent="Connecting microphone to radio server…";
    }catch(e){toast("Could not start PCM microphone stream: "+e.message);try{socket?.close()}catch{}return}
-   streamInfo.textContent="🔴 MIC LIVE • 48 kHz / 16-bit PCM stereo • 320 kbps MP3 output";
-   startMeter();
   };
-  socket.onerror=()=>toast("Live connection failed. Check the server and internet connection.");
+  socket.onmessage=e=>{
+   if(typeof e.data!=="string")return;
+   let reply;try{reply=JSON.parse(e.data)}catch{return}
+   if(reply.type==="ready"){
+    streamInfo.textContent="🔴 MIC LIVE • "+Math.round((reply.sampleRate||48000)/1000)+" kHz / 16-bit PCM stereo • 320 kbps MP3 output";
+    startMeter();
+   }else if(reply.type==="error"){
+    streamInfo.textContent="Microphone OFF — "+(reply.message||"Server could not start live audio");
+    toast("Live microphone: "+(reply.message||"server error"));
+    try{socket?.close()}catch{}
+   }
+  };
+  socket.onerror=()=>{streamInfo.textContent="Microphone OFF — live server connection failed.";toast("Live connection failed. Check the server and internet connection.");};
   socket.onclose=()=>cleanup();
  }catch(e){
   const message=String(e?.message||e||"Unknown microphone error");
