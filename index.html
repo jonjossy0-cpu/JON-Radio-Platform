@@ -77,8 +77,8 @@ async function openLiveMic(){
   const source=audioCtx.createMediaStreamSource(mic);
   // Reduce low-frequency electrical/handling rumble and high-frequency hiss before transmission.
   const micHighPass=audioCtx.createBiquadFilter();micHighPass.type="highpass";micHighPass.frequency.value=95;micHighPass.Q.value=0.707;
-  const micLowPass=audioCtx.createBiquadFilter();micLowPass.type="lowpass";micLowPass.frequency.value=14500;micLowPass.Q.value=0.707;
-  const micCompressor=audioCtx.createDynamicsCompressor();micCompressor.threshold.value=-24;micCompressor.knee.value=18;micCompressor.ratio.value=2.5;micCompressor.attack.value=0.012;micCompressor.release.value=0.18;
+  const micLowPass=audioCtx.createBiquadFilter();micLowPass.type="lowpass";micLowPass.frequency.value=12500;micLowPass.Q.value=0.707;
+  const micCompressor=audioCtx.createDynamicsCompressor();micCompressor.threshold.value=-18;micCompressor.knee.value=12;micCompressor.ratio.value=1.8;micCompressor.attack.value=0.02;micCompressor.release.value=0.25;
   source.connect(micHighPass);micHighPass.connect(micLowPass);micLowPass.connect(micCompressor);
   analyser=audioCtx.createAnalyser();analyser.fftSize=512;micCompressor.connect(analyser);
   // Send cleaned, gently level-controlled PCM to the server; encode to MP3 only once on the server.
@@ -90,7 +90,7 @@ async function openLiveMic(){
    try{socket.send(JSON.stringify({type:"pcm",sampleRate:audioCtx.sampleRate,channels:2,format:"s16le"}))}
    catch{toast("Could not start microphone stream.");try{socket?.close()}catch{}return}
    micProcessor.onaudioprocess=e=>{
-    if(!socket||socket.readyState!==1||socket.bufferedAmount>1048576)return;
+    if(!socket||socket.readyState!==1)return;\n    // Do not drop individual PCM blocks at the old 1 MB threshold: abrupt gaps can sound like clicks/noise.\n    // Allow a larger temporary queue for short network stalls; the WebSocket is local to this radio server.\n    if(socket.bufferedAmount>8388608){streamInfo.textContent="⚠️ MIC LIVE • Network is slow; audio may be delayed.";return;}
     const input=e.inputBuffer,left=input.getChannelData(0),right=input.numberOfChannels>1?input.getChannelData(1):left;
     const frames=input.length,pcm=new Int16Array(frames*2);
     // Avoid block-level gating: it can create intermittent clipping/chattering on speech.
