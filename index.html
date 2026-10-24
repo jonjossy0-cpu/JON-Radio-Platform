@@ -99,7 +99,7 @@ async function openLiveMic(){
     }
     try{socket.send(pcm.buffer)}catch{}
    };
-   streamInfo.textContent="🔴 MIC LIVE • UNCOMPRESSED PCM • "+audioCtx.sampleRate+" Hz STEREO • MP3 320 kbps";
+   streamInfo.textContent="🔴 MIC LIVE • UNCOMPRESSED PCM • "+audioCtx.sampleRate+" Hz STEREO • MP3 256 kbps";
    startMeter();
   };
   socket.onerror=()=>toast("Live connection failed. Check the server and internet connection.");
