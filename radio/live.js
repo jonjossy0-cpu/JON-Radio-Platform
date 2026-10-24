@@ -8,7 +8,7 @@ function start(inputSampleRate=48000,inputFormat="s16le"){
  if(!broadcast.start("live"))return false;
  const inputArgs=inputFormat==="webm-opus"?["-f","webm","-i","pipe:0"]:["-f","s16le","-ar",String(rate),"-ac","2","-i","pipe:0"];
  try{
-  ffmpeg=spawn(FFMPEG_PATH,["-hide_banner","-loglevel","warning",...inputArgs,"-vn","-map","0:a:0","-ac","2","-channel_layout","stereo","-ar","48000","-c:a","libmp3lame","-b:a","320k","-joint_stereo","1","-af","highpass=f=70,lowpass=f=20000,alimiter=limit=0.95,aresample=async=1:first_pts=0","-f","mp3","pipe:1"],{stdio:["pipe","pipe","pipe"]});
+  ffmpeg=spawn(FFMPEG_PATH,["-hide_banner","-loglevel","warning",...inputArgs,"-vn","-map","0:a:0","-ac","2","-channel_layout","stereo","-ar","48000","-c:a","libmp3lame","-b:a","320k","-minrate","320k","-maxrate","320k","-bufsize","640k","-joint_stereo","1","-af","highpass=f=70,lowpass=f=20000,alimiter=limit=0.95","-f","mp3","pipe:1"],{stdio:["pipe","pipe","pipe"]});
  }catch(e){active=false;broadcast.stop("live");return false}
  active=true;
  ffmpeg.stdout.on("data",chunk=>{if(active)broadcast.broadcast(chunk)});
